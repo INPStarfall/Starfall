@@ -132,7 +132,7 @@ function ENT:SetScale ( scale )
 		m:Scale( scale )
 		self:EnableMatrix( "RenderMultiply", m )
 	else
-		self.SetModelScale( ( scale.x + scale.y + scale.z ) / 3, 0 )
+		self:SetModelScale( ( scale.x + scale.y + scale.z ) / 3, 0 )
 	end
 
 	local propmax = self:OBBMaxs()
