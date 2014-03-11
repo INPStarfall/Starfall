@@ -144,9 +144,19 @@ end )
 -- @param scale Vector scale
 function ENT:SetScale ( scale )
 	self.scale = scale
-	local m = Matrix()
-	m:Scale( scale )
-	self:EnableMatrix( "RenderMultiply", m )
+	
+	local boneCount = self:GetBoneCount() or -1
+	if boneCount > 1 then
+		for i = 0, boneCount do
+			self:ManipulateBoneScale( i, scale )
+		end
+	elseif self.EnableMatrix then
+		local m = Matrix()
+		m:Scale( scale )
+		self:EnableMatrix( "RenderMultiply", m )
+	else
+		self:SetModelScale( ( scale.x + scale.y + scale.z ) / 3, 0 )
+	end
 
 	local propmax = self:OBBMaxs()
 	local propmin = self:OBBMins()
