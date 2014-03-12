@@ -47,6 +47,27 @@ function hook_library.run(hookname, ...)
 	return unpack(ret)
 end
 
+--- Run a hook on all instances
+-- @shared
+-- @param hookname The hook name
+-- @param ... arguments
+function hook_library.runShared( hookname, ... )
+	SF.CheckType( hookname,"string" )
+	
+	local instance = SF.instance
+	SF.instance = nil -- Pretend we're not running an instance
+	for instance,_ in pairs( registered_instances ) do
+		local ok,a,b,c,d,e,f,g,h = instance:runScriptHookForResult( hookname, ... )
+		
+		if not ok then
+			instance:Error( "Hook '" .. hookname .. "' errored with " .. a, b )
+		elseif a ~= nil then
+			return a,b,c,d,e,f,g,h
+		end
+	end
+	SF.instance = instance -- Set it back
+end
+
 --- Remove a hook
 -- @shared
 -- @param hookname The hook name
