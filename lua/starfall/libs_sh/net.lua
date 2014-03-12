@@ -133,6 +133,11 @@ function net_library.start( name )
 	write( instance, "String", name )
 end
 
+---------------------------------------
+-------------------------- Writing
+---------------------------------------
+
+
 --- Writes a table to the net message
 -- @shared
 -- @param table The table to be written
@@ -147,14 +152,6 @@ function net_library.writeTable( t )
 	return true
 end
 
---- Reads a table from the net message
--- @shared
--- @return The table that was read
-
-function net_library.readTable()
-	return SF.Sanitize(net.ReadTable())
-end
-
 --- Writes a string to the net message
 -- @shared
 -- @param string The string to be written
@@ -167,14 +164,6 @@ function net_library.writeString( t )
 
 	write( instance, "String", t )
 	return true
-end
-
---- Reads a string from the net message
--- @shared
--- @return The string that was read
-
-function net_library.readString()
-	return net.ReadString()
 end
 
 --- Writes an integer to the net message
@@ -193,16 +182,6 @@ function net_library.writeInt( t, n )
 	return true
 end
 
---- Reads an integer from the net message
--- @shared
--- @param bitCount The amount of bits to read
--- @return The integer that was read
-
-function net_library.readInt(n)
-	SF.CheckType( n, "number" )
-	return net.ReadInt(n)
-end
-
 --- Writes an unsigned integer to the net message
 -- @shared
 -- @param integer The integer to be written
@@ -219,16 +198,6 @@ function net_library.writeUInt( t, n )
 	return true
 end
 
---- Reads an unsigned integer from the net message
--- @shared
--- @param bitCount The amount of bits to read
--- @return The unsigned integer that was read
-
-function net_library.readUInt(n)
-	SF.CheckType( n, "number" )
-	return net.ReadUInt(n)
-end
-
 --- Writes a bit to the net message
 -- @shared
 -- @param bit The bit to be written. (boolean)
@@ -241,14 +210,6 @@ function net_library.writeBit( t )
 
 	write( instance, "Bit", t )
 	return true
-end
-
---- Reads a bit from the net message
--- @shared
--- @return The bit that was read. (0 for false, 1 for true)
-
-function net_library.readBit()
-	return net.ReadBit()
 end
 
 --- Writes a double to the net message
@@ -265,14 +226,6 @@ function net_library.writeDouble( t )
 	return true
 end
 
---- Reads a double from the net message
--- @shared
--- @return The double that was read
-
-function net_library.readDouble()
-	return net.ReadDouble()
-end
-
 --- Writes a float to the net message
 -- @shared
 -- @param double The float to be written
@@ -287,13 +240,101 @@ function net_library.writeFloat( t )
 	return true
 end
 
+
+---------------------------------------
+-------------------------- Reading
+---------------------------------------
+
+local values_read = {}
+local values_read_pointer = 1
+local function read( value, type )
+	if values_read_pointer > #values_read then
+		values_read[values_read_pointer] = { value, type }
+		values_read_pointer = values_read_pointer + 1
+		return value
+	else
+		local t = values_read[values_read_pointer]
+		local value, _type = t[1], t[2]
+		values_read_pointer = values_read_pointer + 1
+		if _type == type then
+			return value
+		end
+	end
+end
+
+local function resetValuesReadPointer()
+	values_read_pointer = 1
+end
+
+local function resetValuesRead()
+	values_read = {}
+	resetValuesReadPointer()
+end
+		
+--- Reads a table from the net message
+-- @shared
+-- @return The table that was read
+
+function net_library.readTable()
+	return read( SF.Sanitize(net.ReadTable()), "table" )
+end
+
+--- Reads a string from the net message
+-- @shared
+-- @return The string that was read
+
+function net_library.readString()
+	return read( net.ReadString(), "string" )
+end
+
+
+--- Reads an integer from the net message
+-- @shared
+-- @param bitCount The amount of bits to read
+-- @return The integer that was read
+
+function net_library.readInt(n)
+	SF.CheckType( n, "number" )
+	return read( net.ReadInt(n), "int" )
+end
+
+--- Reads an unsigned integer from the net message
+-- @shared
+-- @param bitCount The amount of bits to read
+-- @return The unsigned integer that was read
+
+function net_library.readUInt(n)
+	SF.CheckType( n, "number" )
+	return read( net.ReadUInt(n), "uint" )
+end
+
+--- Reads a bit from the net message
+-- @shared
+-- @return The bit that was read. (0 for false, 1 for true)
+
+function net_library.readBit()
+	return read( net.ReadBit(), "bit" )
+end
+
+--- Reads a double from the net message
+-- @shared
+-- @return The double that was read
+
+function net_library.readDouble()
+	return read( net.ReadDouble(), "double" )
+end
+
 --- Reads a float from the net message
 -- @shared
 -- @return The float that was read
 
 function net_library.readFloat()
-	return net.ReadFloat()
+	return read( net.ReadFloat(), "float" )
 end
+
+---------------------------------------
+-------------------------- Other
+---------------------------------------
 
 --- Gets the amount of bytes written so far
 -- @return The amount of bytes written so far
@@ -312,6 +353,30 @@ function net_library.canSend()
 	return can_send(SF.instance, true)
 end
 
+---------------------------------------
+-------------------------- Hook
+---------------------------------------
+
 net.Receive( "SF_netmessage", function( len, ply )
-	SF.RunScriptHook( "net", net.ReadString(), len, ply and SF.WrapObject( ply ) )
+	resetValuesRead()
+	
+	local name = net.ReadString()
+	
+	--- Calls a script hook on all processors.
+	for _,instance in pairs(SF.allInstances) do
+	
+		if not instance.error then
+			local ok, err = instance:runScriptHook("net", name, len, ply and SF.WrapObject( ply ))
+			if not ok then
+				instance.error = true
+				if instance.runOnError then
+					instance:runOnError( err )
+				end
+			end
+			
+			resetValuesReadPointer()
+		end
+	end
+
+	--SF.RunScriptHook( "net", net.ReadString(), len, ply and SF.WrapObject( ply ) )
 end)
