@@ -107,11 +107,16 @@ end
 
 --- Sets the sound volume
 -- @param vol Volume as a percent between 0 and 1
-function sound_methods:setVolume(vol)
+-- @param delta (Optinal) The transition time between the current volume and the new one
+function sound_methods:setVolume(vol, delta)
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType(self, sound_metamethods)
 	SF.CheckType(vol, "number")
-	unwrap(self):ChangeVolume(math.Clamp(vol,0,1))
+	if delta then
+		SF.CheckType(delta, "number")
+		if delta < 0 then delta = nil end
+	end
+	unwrap(self):ChangeVolume(math.Clamp(vol,0,1), delta)
 end
 
 --- Sets the sound level. This determines the sound attenuation. Only works when the sound is not playing.
