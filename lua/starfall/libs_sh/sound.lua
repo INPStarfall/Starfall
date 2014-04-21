@@ -53,8 +53,8 @@ end
 
 --- Plays a sound from an entity. Quick alternative to sounds.create if you don't
 -- need the extra bit of control
--- @param soundlevel (Optional) The sound level. See sound:setLevel() for more info
--- @param pitch (Optional) Pitch percent, from 0 to 255
+-- @param soundlevel (Optional) The sound level. See sound:setLevel() for more info, default is 100
+-- @param pitch (Optional) Pitch percent, from 0 to 255, default is 100
 function sound_library.emitEntity(entity, path, soundlevel, pitch)
 	if not SF.Permissions.check( SF.instance.player, path, "sound.create" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType(entity, SF.Entities.Metatable)
@@ -93,28 +93,32 @@ end
 
 --- Sets the sound pitch
 -- @param pitch The sound pitch as a percent from 0 to 255
--- @param delta (Optinal) The transition time between the current pitch and the new one
+-- @param delta (Optinal) The transition time between the current pitch and the new one, default is 0
 function sound_methods:setPitch(pitch, delta)
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType(self, sound_metamethods)
 	SF.CheckType(pitch, "number")
 	if delta then
 		SF.CheckType(delta, "number")
-		if delta < 0 then delta = nil end
+		if delta < 0 then delta = 0 end
+	else
+		delta = 0
 	end
 	unwrap(self):ChangePitch(math.Clamp(pitch,0,255), delta)
 end
 
 --- Sets the sound volume
 -- @param vol Volume as a percent between 0 and 1
--- @param delta (Optinal) The transition time between the current volume and the new one
+-- @param delta (Optinal) The transition time between the current volume and the new one, default is 0
 function sound_methods:setVolume(vol, delta)
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType(self, sound_metamethods)
 	SF.CheckType(vol, "number")
 	if delta then
 		SF.CheckType(delta, "number")
-		if delta < 0 then delta = nil end
+		if delta < 0 then delta = 0 end
+	else
+		delta = 0
 	end
 	unwrap(self):ChangeVolume(math.Clamp(vol,0,1), delta)
 end
