@@ -1,11 +1,11 @@
 --- Sound functions. Plays and manipulates sounds, optionally
 -- attaching them to an entity.
 
-local sound_library, _ = SF.Libraries.Register("sounds")
+local sound_library, _ = SF.Libraries.Register( "sounds" )
 
 --- Sound type
-local sound_methods, sound_metamethods = SF.Typedef("Sound")
-local wrap, unwrap = SF.CreateWrapper(sound_metamethods,true,false)
+local sound_methods, sound_metamethods = SF.Typedef( "Sound" )
+local wrap, unwrap = SF.CreateWrapper( sound_metamethods, true, false )
 
 -- Register privileges
 do
@@ -20,127 +20,136 @@ end
 -- @param entity Entity playing the sound
 -- @return The sound object. Keep this around to ensure it isn't GC'd (and thus stopped)
 -- before it is done playing.
-function sound_library.create(entity, path)
+function sound_library.create ( entity, path )
 	if not SF.Permissions.check( SF.instance.player, path, "sound.create" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(path, "string")
-	SF.CheckType(entity, SF.Entities.Metatable)
-	if path:match('["?]') then SF.throw( "Invalid sound path: " .. path, 2 ) end
+	SF.CheckType( path, "string" )
+	SF.CheckType( entity, SF.Entities.Metatable )
+	if path:match( '["?]' ) then SF.throw( "Invalid sound path: " .. path, 2 ) end
 	
-	entity = SF.Entities.Unwrap(entity)
-	if not (entity and entity:IsValid()) then return end
-	return wrap(CreateSound(entity, path))
+	entity = SF.Entities.Unwrap( entity )
+	if not ( entity and entity:IsValid() ) then return end
+	return wrap( CreateSound( entity, path ) )
 end
 
 --- Plays a sound from a fixed point in the world.
 -- @param amplitude (Optinal) Loudness of the sound, from 0 to 255
 -- @param pitch (Optional) Pitch percent, from 0 to 255
-function sound_library.emitWorld(origin, path, amplitude, pitch)
+function sound_library.emitWorld ( origin, path, amplitude, pitch )
 	if not SF.Permissions.check( SF.instance.player, path, "sound.create" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(path, "string")
-	SF.CheckType(origin, "Vector")
+	SF.CheckType( path, "string" )
+	SF.CheckType( origin, "Vector" )
 	if amplitude then
-		SF.CheckType(amplitude, "number")
-		amplitude = math.Clamp(amplitude, 0, 255)
+		SF.CheckType( amplitude, "number" )
+		amplitude = math.Clamp( amplitude, 0, 255 )
 	end
 	if pitch then
-		SF.CheckType(pitch, "number")
-		pitch = math.Clamp(pitch, 0, 255)
+		SF.CheckType( pitch, "number" )
+		pitch = math.Clamp( pitch, 0, 255 )
 	end
-	if path:match('["?]') then SF.throw( "Invalid sound path: " .. path, 2 ) end
+	if path:match( '["?]' ) then SF.throw( "Invalid sound path: " .. path, 2 ) end
 	
-	WorldSound(path, origin, amplitude, pitch)
+	WorldSound( path, origin, amplitude, pitch )
 end
 
 --- Plays a sound from an entity. Quick alternative to sounds.create if you don't
 -- need the extra bit of control
--- @param soundlevel (Optional) The sound level. See sound:setLevel() for more info
--- @param pitch (Optional) Pitch percent, from 0 to 255
-function sound_library.emitEntity(entity, path, soundlevel, pitch)
+-- @param soundlevel (Optional) The sound level. See sound:setLevel() for more info, default is 100
+-- @param pitch (Optional) Pitch percent, from 0 to 255, default is 100
+function sound_library.emitEntity ( entity, path, soundlevel, pitch )
 	if not SF.Permissions.check( SF.instance.player, path, "sound.create" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(entity, SF.Entities.Metatable)
-	SF.CheckType(path, "string")
+	SF.CheckType( entity, SF.Entities.Metatable )
+	SF.CheckType( path, "string" )
 	if soundlevel then
-		SF.CheckType(soundlevel, "number")
-		soundlevel = math.Clamp(soundlevel, 0, 511)
+		SF.CheckType( soundlevel, "number" )
+		soundlevel = math.Clamp( soundlevel, 0, 511 )
 	end
 	if pitch then
-		SF.CheckType(pitch, "number")
-		pitch = math.Clamp(pitch, 0, 255)
+		SF.CheckType( pitch, "number" )
+		pitch = math.Clamp( pitch, 0, 255 )
 	end
-	if path:match('["?]') then SF.throw( "Invalid sound path: " .. path, 2 ) end
+	if path:match( '["?]' ) then SF.throw( "Invalid sound path: " .. path, 2 ) end
 	
-	entity = SF.Entities.Unwrap(entity)
-	if not (entity and entity:IsValid()) then return end
-	entity:EmitSound(path, soundlevel, pitch)
+	entity = SF.Entities.Unwrap( entity )
+	if not ( entity and entity:IsValid() ) then return end
+	entity:EmitSound( path, soundlevel, pitch )
 end
 
---- Returns the duration of the sound in seconds. Only works on .wav files,
+--- Returns the duration of the sound in seconds. Only works on .wav files, 
 -- and there are other issues as well.
 -- @return Sound duration
-function sound_library.duration(path)
-	SF.CheckType(path, "string")
-	return SoundDuration(path)
+function sound_library.duration ( path )
+	SF.CheckType( path, "string" )
+	return SoundDuration( path )
 end
 
 -- ------------------------------------------------------------- --
 
 --- Plays the sound.
-function sound_methods:play()
+function sound_methods:play ()
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(self, sound_metamethods)
-	unwrap(self):Play()
+	SF.CheckType( self, sound_metamethods )
+	unwrap( self ):Play()
 end
 
 --- Sets the sound pitch
 -- @param pitch The sound pitch as a percent from 0 to 255
--- @param delta (Optinal) The transition time between the current pitch and the new one
-function sound_methods:setPitch(pitch, delta)
+-- @param delta (Optinal) The transition time between the current pitch and the new one, default is 0
+function sound_methods:setPitch ( pitch, delta )
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(self, sound_metamethods)
-	SF.CheckType(pitch, "number")
+	SF.CheckType( self, sound_metamethods )
+	SF.CheckType( pitch, "number" )
 	if delta then
-		SF.CheckType(delta, "number")
-		if delta < 0 then delta = nil end
+		SF.CheckType( delta, "number" )
+		if delta < 0 then delta = 0 end
+	else
+		delta = 0
 	end
-	unwrap(self):ChangePitch(math.Clamp(pitch,0,255), delta)
+	unwrap( self ):ChangePitch( math.Clamp( pitch, 0, 255 ), delta )
 end
 
 --- Sets the sound volume
 -- @param vol Volume as a percent between 0 and 1
-function sound_methods:setVolume(vol)
+-- @param delta (Optinal) The transition time between the current volume and the new one, default is 0
+function sound_methods:setVolume ( vol, delta )
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(self, sound_metamethods)
-	SF.CheckType(vol, "number")
-	unwrap(self):ChangeVolume(math.Clamp(vol,0,1))
+	SF.CheckType( self, sound_metamethods )
+	SF.CheckType( vol, "number" )
+	if delta then
+		SF.CheckType( delta, "number" )
+		if delta < 0 then delta = 0 end
+	else
+		delta = 0
+	end
+	unwrap( self ):ChangeVolume( math.Clamp( vol, 0, 1 ), delta )
 end
 
 --- Sets the sound level. This determines the sound attenuation. Only works when the sound is not playing.
 -- See https://developer.valvesoftware.com/wiki/Soundscripts#SoundLevel for values and more info
 -- (use decibel value from the 'code' column, not the actual enum or 'value' column).
 -- @param level New level
-function sound_methods:setLevel(level)
+function sound_methods:setLevel ( level )
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(self, sound_metamethods)
-	SF.CheckType(level, "number")
-	unwrap(self):SetSoundLevel(math.Clamp(level, 0, 511))
+	SF.CheckType( self, sound_metamethods )
+	SF.CheckType( level, "number" )
+	unwrap( self ):SetSoundLevel( math.Clamp( level, 0, 511 ) )
 end
 
 --- Stops or fades out the sound.
 -- @param fade (Optional) Time, in seconds, to fade out the sound. Not given = stop immediately
-function sound_methods:stop(fade)
+function sound_methods:stop ( fade )
 	if not SF.Permissions.check( SF.instance.player, this, "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
-	SF.CheckType(self, sound_metamethods)
+	SF.CheckType( self, sound_metamethods )
 	if fade then
-		SF.CheckType(fade, "number")
-		unwrap(self):FadeOut(math.max(fade,0))
+		SF.CheckType( fade, "number" )
+		unwrap( self ):FadeOut( math.max( fade, 0 ) )
 	else
-		unwrap(self):Stop()
+		unwrap( self ):Stop()
 	end
 end
 
 --- Checks if the sound is playing
 -- @return True if the sound is playing
-function sound_methods:isPlaying()
-	SF.CheckType(self, sound_metamethods)
-	return unwrap(self):isPlaying()
+function sound_methods:isPlaying ()
+	SF.CheckType( self, sound_metamethods )
+	return unwrap( self ):isPlaying()
 end
