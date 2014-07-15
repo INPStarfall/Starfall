@@ -1,4 +1,5 @@
 AddCSLuaFile( "autorun/client/sf_models.lua" )
+AddCSLuaFile( "autorun/client/examples.lua" )
 
 resource.AddFile( "materials/models/spacecode/glass.vmt" )
 resource.AddFile( "materials/models/spacecode/sfchip.vmt" )
