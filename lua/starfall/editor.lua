@@ -30,6 +30,7 @@ if CLIENT then
 		["do"] = true,
 		["repeat"] = true,
 		["until"] = true,
+		["break"] = true,
 		
 		["function"] = true,
 		["local"] = true,
