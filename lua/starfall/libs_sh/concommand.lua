@@ -159,7 +159,7 @@ function concmd_library.remove( name )
 end
 
 if CLIENT then
-	--- Adds an sf console command to every player
+	--- Adds an sf console command to every player, for admins only
 	-- @client
 	-- @param name The command name to be used in console
 	-- @param func The function to run when the concommand is executed, Args: ( Player ply, string cmd, table args, string fullstring )
