@@ -700,6 +700,16 @@ function render_library.readPixel ( x, y )
 	return SF.Color.Wrap( Color( r, g, b, 255 ) )
 end
 
+--- Performs a render trace and returns the color of the surface hit, this uses a low res version of the texture.
+-- @param startPos The start position to trace from.
+-- @param endPos The end position of the trace.
+-- @return Color of surface hit (Vector)
+function render_library.getSurfaceColor( startPos, endPos )
+	SF.CheckType( startPos, SF.Types[ "Vector" ] )
+	SF.CheckType( endPos, SF.Types[ "Vector" ] )
+	return render.GetSurfaceColor( SF.UnwrapObject( startPos ), SF.UnwrapObject( endPos ) )
+end
+
 --- Called when a player uses the screen
 -- @name starfallUsed
 -- @class hook
