@@ -36,8 +36,15 @@ function ENT:PreEntityCopy ()
 	end
 end
 
-function ENT:PostEntityPaste ( ply, ent )
+local function EntLookup(created)
+	return function(id, def)
+		local ent = created[id]
+		return (IsValid(ent) and ent or def)
+	end
+end
+
+function ENT:PostEntityPaste ( ply, ent, created )
 	if ent.EntityMods and ent.EntityMods.SFDupeInfo then
-		ent:ApplyDupeInfo( ply, ent, ent.EntityMods.SFDupeInfo )
+		ent:ApplyDupeInfo( ply, ent, ent.EntityMods.SFDupeInfo, EntLookup(created) )
 	end
 end
