@@ -102,11 +102,11 @@ function ENT:BuildDupeInfo ()
 end
 
 function ENT:ApplyDupeInfo ( ply, ent, info, GetEntByID )
-	self.BaseClass.ApplyDupeInfo( self, ply, ent, info, GetEntByID )
 	self.owner = ply
 	
 	if info.starfall then
 		local code, main = SF.DeserializeCode( info.starfall )
 		self:Compile( code, main )
 	end
+	self.BaseClass.ApplyDupeInfo( self, ply, ent, info, GetEntByID )
 end
