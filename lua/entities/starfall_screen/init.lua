@@ -83,7 +83,8 @@ function ENT:Error ( msg, traceback )
 end
 
 function ENT:CodeSent(ply, files, mainfile)
-	if ply ~= self.owner then return end
+	if ( CPPI and not self:CPPICanTool( ply, "starfall_screen" ) ) or 
+			( not CPPI and ply ~= self.owner  ) then return end
 	local update = self.mainfile ~= nil
 
 	self.files = files

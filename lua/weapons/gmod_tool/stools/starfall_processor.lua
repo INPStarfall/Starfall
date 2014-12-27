@@ -49,11 +49,13 @@ function TOOL:LeftClick( trace )
 
 	if trace.Entity:IsValid() and trace.Entity:GetClass() == "starfall_processor" then
 		local ent = trace.Entity
-		if not SF.RequestCode(ply, function(mainfile, files)
+		if ( CPPI and not ent:CPPICanTool( self:GetOwner(), "starfall_processor" ) ) or 
+			( not CPPI and self:GetOwner() ~= ent.owner  ) then return end
+		if not SF.RequestCode( ply, function( mainfile, files )
 			if not mainfile then return end
-			if not IsValid(ent) then return end -- Probably removed during transfer
-			ent:Compile(files, mainfile)
-		end) then
+			if not IsValid( ent ) then return end -- Probably removed during transfer
+			ent:Compile( files, mainfile )
+		end ) then
 			SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 		end
 		return true
@@ -82,11 +84,11 @@ function TOOL:LeftClick( trace )
 
 	ply:AddCleanup( "starfall_processor", sf )
 	
-	if not SF.RequestCode(ply, function(mainfile, files)
+	if not SF.RequestCode( ply, function( mainfile, files )
 		if not mainfile then return end
-		if not IsValid(sf) then return end -- Probably removed during transfer
-		sf:Compile(files, mainfile)
-	end) then
+		if not IsValid( sf ) then return end -- Probably removed during transfer
+		sf:Compile( files, mainfile )
+	end ) then
 		SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 	end
 
@@ -94,7 +96,22 @@ function TOOL:LeftClick( trace )
 end
 
 function TOOL:RightClick( trace )
-	if SERVER then self:GetOwner():SendLua("SF.Editor.open()") end
+	if SERVER then 
+		self:GetOwner():SendLua("SF.Editor.open()") 
+		if trace.Entity:IsValid() and trace.Entity:GetClass() == "starfall_processor" then
+			local ent = trace.Entity
+			if ( CPPI and not ent:CPPICanTool( self:GetOwner(), "starfall_processor" ) ) or 
+				( not CPPI and self:GetOwner() ~= ent.owner  ) then return end
+
+			if not ent.source then return end
+
+			net.Start( "starfall_download" )
+				net.WriteEntity( ent )
+				net.WriteTable( { ent.mainfile } )
+				net.WriteTable( ent.source )
+			net.Send( self:GetOwner() )
+		end
+	end
 	return false
 end
 

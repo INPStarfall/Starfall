@@ -28,7 +28,9 @@ function ENT:Compile ( codetbl, mainfile )
 	instance.runOnError = function ( inst, ... ) self:Error( ... ) end
 	
 	self.instance = instance
-	
+	self.mainfile = instance.mainfile
+	self.source = instance.source
+
 	local ok, msg, traceback = instance:initialize ()
 	if not ok then
 		self:Error( msg, traceback )
