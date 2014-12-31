@@ -486,6 +486,8 @@ if CLIENT then
 		local loaded = {}
 		local ppdata = {}
 
+		local currentIncludes = SF.Editor.editor:GetCurrentEditor().includes
+
 		local function recursiveLoad(path)
 			if loaded[path] then return end
 			loaded[path] = true
@@ -493,6 +495,8 @@ if CLIENT then
 			local code
 			if path == codename and maincode then
 				code = maincode
+			elseif currentIncludes and currentIncludes[path] then
+				code = currentIncludes[path]
 			else
 				code = file.Read("Starfall/"..path, "DATA") or error("Bad include: "..path,0)
 			end
@@ -530,6 +534,9 @@ if CLIENT then
 		local mainfile = net.ReadTable()[1]
 		local files = net.ReadTable()
 		local editor = SF.Editor.editor
+
+		editor:GetCurrentEditor().includes = files
+
 		for i = 1, editor:GetNumTabs( ) do
 			table.GetFirstValue( files )
 			if editor:GetEditor( i ):GetValue( ) == files[ mainfile ] then
