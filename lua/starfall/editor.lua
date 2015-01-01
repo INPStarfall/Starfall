@@ -16,6 +16,17 @@ SF.Editor = {}
 
 if CLIENT then
 
+	local invalid_filename_chars = {
+		["*"] = "",
+		["?"] = "",
+		[">"] = "",
+		["<"] = "",
+		["|"] = "",
+		["\\"] = "",
+		['"'] = "",
+		[" "] = "_",
+	}
+
 	local keywords = {
 		["if"] = true,
 		["elseif"] = true,
@@ -305,6 +316,58 @@ if CLIENT then
 			end
 		end
 
+		function SF.Editor.editor:SaveFile( Line, close, SaveAs )
+			self:ExtractName( )
+			if close and self.chip then
+				if not self:Validate( true ) then return end
+				net.Start( "starfall_uploadandexit" )
+					net.WriteEntity( self.chip ) 
+				net.SendToServer( )
+				self:Close( )
+				return
+			end
+			if not Line or SaveAs or Line == self.Location .. "/" .. ".txt" then
+				local str
+				if self.C[ 'Browser' ].panel.File then
+					str = self.C[ 'Browser' ].panel.File.FileDir -- Get FileDir
+					if str and str ~= "" then -- Check if not nil
+						-- Remove "expression2/" or "cpuchip/" etc
+						local n, _ = str:find( "/", 1, true )
+						str = str:sub( n + 1, -1 )
+
+						if str and str ~= "" then -- Check if not nil
+							if str:Right( 4 ) == ".txt" then -- If it's a file
+								str = string.GetPathFromFilename( str ):Left( -2 ) -- Get the file path instead
+								if not str or str == "" then
+									str = nil
+								end
+							end
+						else
+							str = nil
+						end
+					else
+						str = nil
+					end
+				end
+				Derma_StringRequestNoBlur( "Save to New File", "", ( str ~= nil and str .. "/" or "" ) .. self.savefilefn,
+					function( strTextOut )
+						strTextOut = string.gsub( strTextOut, ".", invalid_filename_chars )
+						self:SaveFile( self.Location .. "/" .. strTextOut .. ".txt", close )
+					end )
+				return
+			end
+
+			file.Write( Line, self:GetCode( ) )
+
+			local panel = self.C[ 'Val' ].panel
+			timer.Simple( 0, function( ) panel.SetText( panel, "   Saved as " .. Line ) end )
+
+			if not self.chip then self:ChosenFile( Line ) end
+			if close then
+				SF.AddNotify( LocalPlayer(), "Starfall code saved as " .. Line .. ".", NOTIFY_GENERIC, 7, NOTIFYSOUND_DRIP3 )
+				self:Close( )
+			end
+		end
 
 		SF.Editor.editor:Setup("SF Editor", "starfall", "nothing") -- Setting the editor type to not nil keeps the validator line
 		
@@ -378,6 +441,7 @@ if CLIENT then
 				self.C['Val'].panel:SetFGColor(255, 255, 255, 128)
 				self.C['Val'].panel:SetText( "   No Syntax Errors" )
 			end
+			return true
 		end
 	end
 	
@@ -423,6 +487,8 @@ if CLIENT then
 		local loaded = {}
 		local ppdata = {}
 
+		local currentIncludes = SF.Editor.editor:GetCurrentEditor().includes
+
 		local function recursiveLoad(path)
 			if loaded[path] then return end
 			loaded[path] = true
@@ -430,6 +496,8 @@ if CLIENT then
 			local code
 			if path == codename and maincode then
 				code = maincode
+			elseif currentIncludes and currentIncludes[path] then
+				code = currentIncludes[path]
 			else
 				code = file.Read("Starfall/"..path, "DATA") or error("Bad include: "..path,0)
 			end
@@ -461,6 +529,24 @@ if CLIENT then
 		end
 	end
 
+	net.Receive( "starfall_download", function( len )
+		local ent = net.ReadEntity()
+		SF.Editor.editor.chip = ent
+		local mainfile = net.ReadTable()[1]
+		local files = net.ReadTable()
+		local editor = SF.Editor.editor
+
+		editor:GetCurrentEditor().includes = files
+
+		for i = 1, editor:GetNumTabs( ) do
+			table.GetFirstValue( files )
+			if editor:GetEditor( i ):GetValue( ) == files[ mainfile ] then
+				editor:SetActiveTab( i )
+				return
+			end
+		end
+		editor:Open( mainfile, files[ mainfile ], true )
+	end )
 
 	-- CLIENT ANIMATION
 
@@ -511,6 +597,8 @@ else
 	-- this might fit better elsewhere
 
 	util.AddNetworkString("starfall_editor_status")
+	util.AddNetworkString("starfall_uploadandexit")
+	util.AddNetworkString("starfall_download")
 
 	resource.AddFile( "materials/radon/starfall2.png" )
 	resource.AddFile( "materials/radon/starfall2.vmt" )
@@ -543,5 +631,28 @@ else
 		net.WriteBit(false)
 		net.Broadcast()
 	end
+
+	net.Receive( "starfall_uploadandexit", function( len, ply ) 
+		ent = net.ReadEntity()
+			
+		--Check cppi or ownership again incase someone manually changes SF.Editor.editor.chip or permissions change
+		if ( CPPI and not ent:CPPICanTool( ply, ent:GetClass() ) ) or ( not CPPI and ply ~= ent.owner ) then 
+			SF.AddNotify( ply, "Cannot upload SF code, permission denied", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
+			return 
+		end
+
+		if not SF.RequestCode( ply, function( mainfile, files )
+			if not mainfile then return end
+			if not IsValid( ent ) then return end
+
+			if ent:GetClass() == "starfall_processor" then
+				ent:Compile( files, mainfile )
+			else
+				ent:CodeSent( ply, files, mainfile )
+			end
+		end ) then
+			SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
+		end
+	end )
 
 end
