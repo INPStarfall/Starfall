@@ -24,8 +24,24 @@ SF.DefaultEnvironment.Color = function ( ... )
 end
 
 --- __newindex metamethod
-function color_metatable.__newindex ( t, k, v )
-	rawset( t, k, v )
+function color_metatable.__newindex ( wrapped_table, key, value )
+	SF.CheckType( value, "number" )
+
+    if math.floor( value ) ~= value then 
+        error( "value must be an integer" ) 
+    end
+    if value > 255 or value < 1 then 
+        error( "value must be between 1 and 255" ); 
+    end
+    
+    if not ( key == 'r' or key == 'g' or key == 'b' or key == 'a' ) then
+        error( "key must be r, g, b, or a" );
+    end
+
+    local unwrapped_table = unwrap( wrapped_table )
+    
+
+    unwrapped_table[key] = value
 end
 
 local _p = color_metatable.__index
