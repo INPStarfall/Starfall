@@ -29,10 +29,6 @@ if SERVER then
 				P.privileges[ id ].group[ query[ i ].group ] = true
 			end
 		end
-		net.Start( "sf_groupperm_response" )
-			net.WriteString( id )
-			net.WriteTable( P.privileges[ id ] )
-		net.Broadcast()
 	end
 
 	util.AddNetworkString( "sf_sendperm_group" )
@@ -55,6 +51,10 @@ end
 hook.Add( "sf_registerPrivilege", "SF_PERM", function( id, name, description, source )
 	if SERVER then
 		registerGroup( id, "superadmin" )
+		net.Start( "sf_groupperm_response" )
+			net.WriteString( id )
+			net.WriteTable( P.privileges[ id ] )
+		net.Broadcast()
 	elseif CLIENT then
 		if source == "cl" then
 			table.insert( permRequests, { id = id, name = name, desc = description, group = "*" } )
@@ -170,11 +170,19 @@ elseif CLIENT then
 	end )
 end
 
+local function getGroup( ply )
+	if evolve then
+		return ply:EV_GetRank( )
+	else
+		return ply:GetUserGroup( )
+	end
+end
+
 --- Prints the permission passed
 P.registerPrivilege( "permissions.get", "sf_getperm", "Console command to get the required group(s) of a starfall permission" )
 concommand.Add( "sf_getperm", function( ply, _, args )
 	if CLIENT then
-		if not P.privileges[ "permissions.get" ].group[ ply:GetUserGroup() ] then return end
+		if not P.privileges[ "permissions.get" ].group[ getGroup( ply ) ] then return end
 	end
 
 	if P.privileges[ args[1] ] ~= nil then
@@ -207,7 +215,7 @@ end )
 P.registerPrivilege( "permissions.add", "sf_addperm", "Console command to grant access to a starfall permission to a usergroup" )
 concommand.Add( "sf_addperm", function( ply, _, args )
 	if CLIENT then
-		if not P.privileges[ "permissions.add" ].group[ ply:GetUserGroup() ] then return end
+		if not P.privileges[ "permissions.add" ].group[ getGroup( ply ) ] then return end
 	end
 
 	if not P.groups[ args[ 2 ] ] and args[ 2 ] ~= "*" then
@@ -243,7 +251,7 @@ end )
 P.registerPrivilege( "permissions.delete", "sf_delperm", "Console command to revoke access to a starfall permission from a usergroup" )
 concommand.Add( "sf_delperm", function( ply, _, args )
 	if CLIENT then
-		if not P.privileges[ "permissions.delete" ].group[ ply:GetUserGroup() ] then return end
+		if not P.privileges[ "permissions.delete" ].group[ getGroup( ply ) ] then return end
 	end
 
 	if not P.groups[ args[ 2 ] ] and args[ 2 ] ~= "*" then

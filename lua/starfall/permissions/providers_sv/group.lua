@@ -49,8 +49,8 @@ if SERVER then --Not needed but just as a safeguard to prevent users from gettin
 
 	P.groups = {}
 	if evolve then
-		for _, v in pairs( evolve.ranks ) do
-			P.groups[ v.UserGroup ] = true
+		for k, _ in pairs( evolve.ranks ) do
+			P.groups[ k ] = true
 		end
 	elseif ulx and ULib then
 		for k, v in pairs( ULib.ucl.groups ) do
@@ -71,8 +71,16 @@ local ALLOW = SF.Permissions.Result.ALLOW
 local DENY = SF.Permissions.Result.DENY
 local NEUTRAL = SF.Permissions.Result.NEUTRAL
 
+local function getGroup( ply )
+	if evolve then
+		return ply:EV_GetRank( )
+	else
+		return ply:GetUserGroup( )
+	end
+end
+
 function Provider:check ( principal, target, key )
-	if SF.Permissions.privileges[ key ].group[ principal:GetUserGroup( ) ] or SF.Permissions.privileges[ key ].group[ "*" ] then
+	if SF.Permissions.privileges[ key ].group[ getGroup( principal ) ] or SF.Permissions.privileges[ key ].group[ "*" ] then
 		return ALLOW
 	end
 	SF.throw( "You do not have permission to run ".. SF.Permissions.privileges[ key ].name ..".", 2 )
