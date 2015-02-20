@@ -86,22 +86,20 @@ local function FindComments ( line )
 	return ret, count
 end
 
-
 --- Parses a source file for directives.
 -- @param filename The file name of the source code
 -- @param source The source code to parse.
--- @param directives A table of additional directives to use.
--- @param data The data table passed to the directives.
--- @param instance The instance
-function SF.Preprocessor.ParseDirectives ( filename, source, directives, data, instance )
+local function parseDirectives ( filename, source )
 	local ending
 	local endingLevel
-	
+
+	local directives = {}
+
 	local str = source
 	while str ~= "" do
 		local line
 		line, str = string.match( str, "^([^\n]*)\n?(.*)$" )
-		
+
 		for _,comment in ipairs( FindComments( line ) ) do
 			if ending then
 				if comment.type == ending then
@@ -123,23 +121,135 @@ function SF.Preprocessor.ParseDirectives ( filename, source, directives, data, i
 				endingLevel = comment.level
 			elseif comment.type == "line" then
 				local directive, args = string.match( line, "--@([^ ]+)%s*(.*)$" )
-				local func = directives[ directive ] or SF.Preprocessor.directives[ directive ]
-				if func then
-					func( args, filename, data, instance )
+				if directive then
+					if not directives[ directive ] then directives[ directive ] = {} end
+					table.insert( directives[ directive ], args )
 				end
 			end
 		end
-		
+
 		if ending == "newline" then ending = nil end
+	end
+	return directives
+end
+
+--- Parses a source file for directives
+-- @param filename The file name of the source code.
+-- @param source The source code to parse.
+-- @param preprocs The preprocessors to search for, can be a string for one, a table for multiple, and nil for all
+-- @return Table of preprocs and their args
+function SF.Preprocessor.GetDirectives ( filename, source, preprocs )
+	local parsedDirectives = parseDirectives( filename, source )
+
+	local preprocs_type = type( preprocs )
+	if preprocs_type == "string" then --1 specified preproc
+		return parsedDirectives[ preprocs ]
+	elseif preprocs_type == "table" then --Table of specified preprocs
+		local ret = {}
+		for _, preproc in pairs( preprocs ) do
+			ret[ preproc ] = parsedDirectives[ preproc ]
+		end
+		return ret
+	elseif preprocs == nil then --All preprocs in the file
+		return parsedDirectives
 	end
 end
 
-local function directive_include (args, filename, data)
-	if not data.includes then data.includes = {} end
-	if not data.includes[ filename ] then data.includes[ filename ] = {} end
-	
-	local incl = data.includes[ filename ]
-	incl[ #incl + 1 ] = args
+--- Parses a source file for directives
+-- @param filename The file name of the source code.
+-- @param source The source code to parse.
+-- @param directives A table of additional directives to use.
+-- @param data The data table passed to the directives.
+-- @param instance The instance
+-- @param preprocs The preprocessors to search for, can be a table for multiple, and nil for all
+-- @return Table of preprocs and their args
+function SF.Preprocessor.ParseDirectives ( filename, source, directives, data, instance, preprocs )
+	local parsedDirectives = SF.Preprocessor.GetDirectives( filename, source )
+
+	local ok, err = true, {}
+
+	if preprocs then
+		local _parsed = {}
+		for _, preproc in pairs( preprocs ) do
+			_parsed[ preproc ] = parsedDirectives[ preproc ]
+		end
+		parsedDirectives = _parsed
+	end
+
+	for preproc, v in pairs( parsedDirectives or {} ) do
+		for _, args in pairs( v ) do
+			local func = directives[ preproc ] or SF.Preprocessor.directives[ preproc ]
+			if func then
+				local _ok, _err = func( args, filename, data, instance )
+				if _ok == false then
+					ok = false
+					err[ preproc ] = _err
+				end
+			end
+		end
+	end
+
+	return ok, err
+end
+
+local function directive_include ( args, filename, data )
+	if CLIENT and args then
+		if not data.includes then data.includes = {} end
+		if not data.includes[ filename ] then data.includes[ filename ] = {} end
+
+		local incl = data.includes[ filename ]
+
+		if args:find( "%*" ) == nil then
+			incl[ #incl + 1 ] = args
+			return
+		end
+
+		if args:find( "%*%*" ) ~= nil then
+			if args:find( "%*%*.*/" ) ~= nil then
+				return false, args:match( "(%*%*.*)$" ) .. " is invalid, did you mean '" .. args:match( "(%*%*.*.*)$" ):gsub( "%*%*", "%*" ) .. "'?"
+			end
+			--Include recursively
+			args = args:gsub( "%*%*", "*" )
+			local function find ( search )
+				local files, dirs = file.Find( "starfall/" .. search, "DATA" )
+				for _, file in pairs( files ) do
+					incl[ #incl + 1 ] = search:match( "(.*/).*$" ) .. file
+				end
+
+				for _, dir in pairs( dirs ) do
+					find( search:match( "(.*/)[.*]$" ) .. dir .. "/*" )
+				end
+			end
+			find( args )
+		else
+			local smashedWords = {}
+
+			local i = 1
+
+			for word in args:gmatch( "([^/]*)" ) do
+				if word ~= "" then
+					smashedWords[ i ] = ( smashedWords[ i ] and smashedWords[ i ] .. "/" .. word ) or word
+					if word:find( "*" ) ~= nil then
+						i = i + 1
+					end
+				end
+			end
+
+			local function find ( level, search )
+				local files, dirs = file.Find( "starfall/" .. search, "DATA" )
+				if level < #smashedWords then --It's a directory
+					for _, dir in pairs( dirs ) do
+						find( level + 1, ( search:match( "(.*/)[.*]$" ) or "" ) .. dir .. "/" .. smashedWords[ level + 1 ] )
+					end
+				else --It's a file
+					for _, file in pairs( files ) do
+						incl[ #incl + 1 ] = ( search:match( "(.*/).*$" ) or "" ) .. file
+					end
+				end
+			end
+			find( 1, smashedWords[ 1 ] )
+		end
+	end
 end
 SF.Preprocessor.SetGlobalDirective( "include", directive_include )
 
@@ -168,7 +278,12 @@ SF.Preprocessor.SetGlobalDirective( "model", directive_model )
 -- @class directive
 -- @param path Path to the file
 -- @usage
--- \--@include lib/someLibrary.txt
+-- \--@include lib/**.txt
+-- --** includes files recursivley
+-- \--@include lib/*/init.txt
+-- --* is treated as a wildcard that only applies to the directory that it is in
+-- \--@include lib/afile.txt
+-- --No *'s are treated like exact paths
 -- 
 -- require( "lib/someLibrary.txt" )
 -- -- CODE
