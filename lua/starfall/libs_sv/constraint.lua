@@ -106,9 +106,9 @@ function constraint_library.ballsocketadv(e1, e2, bone1, bone2, v1, v2, force_li
 	local ent2 = eunwrap( e2 )
 	local vec1 = vunwrap( v1 )
 	local vec2 = vunwrap( v2 )
-	local mins = vunwrap( minv )
-	local maxs = vunwrap( maxv )
-	local frictions = vunwrap( frictionv )
+	local mins = vunwrap( minv ) or Vector ( 0, 0, 0 )
+	local maxs = vunwrap( maxv ) or Vector ( 0, 0, 0 )
+	local frictions = vunwrap( frictionv ) or Vector ( 0, 0, 0 )
 	
 	if not isValid( ent1 ) or not isValid( ent2 ) then return false, "entity not valid" end
 	if not SF.Permissions.check( SF.instance.player, ent1, "constraints.ballsocketadv" ) then SF.throw( "Insufficient permissions", 2 ) end
@@ -143,8 +143,8 @@ function constraint_library.elastic(index, e1, e2, bone1, bone2, v1, v2, const, 
 	
 	bone1 = bone1 or 0
 	bone2 = bone2 or 0
-	const = const or 0
-	damp = damp or 0
+	const = const or 1000
+	damp = damp or 100
 	rdamp = rdamp or 0
 	width = math.Clamp( width or 0, 0, 50)
 	strech = strech and true or false
@@ -277,7 +277,7 @@ end
 
 --- Breaks all constraints on an entity
 -- @server 
-function constraint_library.constraintBreakAll(e)
+function constraint_library.breakAll(e)
 	SF.CheckType( e, ents_metatable )
 	local ent1 = eunwrap( e )
 	
@@ -289,7 +289,7 @@ end
 
 --- Breaks all constraints of a certain type on an entity
 -- @server 
-function constraint_library.constraintBreak(e, typename)
+function constraint_library.breakType(e, typename)
 	SF.CheckType( e, ents_metatable )
     SF.CheckType( typename, "string" )
 	
