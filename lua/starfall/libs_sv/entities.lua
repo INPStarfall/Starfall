@@ -28,7 +28,11 @@ do
 	P.registerPrivilege( "entities.setVelocity", "Set Velocity", "Allows the user to change the velocity of an entity" )
 	P.registerPrivilege( "entities.setFrozen", "Set Frozen", "Allows the user to freeze and unfreeze an entity" )
 	P.registerPrivilege( "entities.setSolid", "Set Solid", "Allows the user to change the solidity of an entity" )
+	P.registerPrivilege( "entities.setMass", "Set Mass", "Allows the user to change the mass of an entity" )
 	P.registerPrivilege( "entities.enableGravity", "Enable gravity", "Allows the user to change whether an entity is affected by gravity" )
+	P.registerPrivilege( "entities.enableMotion", "Set Motion", "Allows the user to disable an entity's motion" )
+	P.registerPrivilege( "entities.enableDrag", "Set Drag", "Allows the user to disable an entity's air resistence" )
+	P.registerPrivilege( "entities.remove", "Remove", "Allows the user to remove entities" )
 end
 
 local function fix_nan ( v )
@@ -337,6 +341,20 @@ function ents_methods:setVelocity ( vel )
 	return true
 end
 
+--- Removes an entity
+function ents_methods:remove ()
+	SF.CheckType( self, ents_metatable )
+
+	local ent = unwrap( self )
+
+	if not isValid( ent ) or ent:IsPlayer() or ent:EntIndex()==0 then return false, "entity not valid" end
+	
+	if not SF.Permissions.check( SF.instance.player, ent, "entities.remove" ) then SF.throw( "Insufficient permissions", 2 ) end
+
+	ent:Remove()
+	return true
+end
+
 --- Sets the entity frozen state
 -- @param freeze Should the entity be frozen?
 function ents_methods:setFrozen ( freeze )
@@ -379,6 +397,21 @@ function ents_methods:setSolid ( solid )
 	ent:SetNotSolid( not solid )
 end
 
+--- Sets the entity's mass
+-- @param number mass
+function ents_methods:setMass ( mass )
+	local ent = unwrap( self )
+	
+	if not isValid( ent ) then return false, "entity not valid" end
+	local phys = getPhysObject( ent )
+	if not phys then return false, "entity has no physics object" end
+	
+	if not SF.Permissions.check( SF.instance.player, ent, "entities.setMass" ) then SF.throw( "Insufficient permissions", 2 ) end
+
+	phys:SetMass( math.Clamp(mass, 1, 50000) )
+	return true
+end
+
 --- Sets entity gravity
 -- @param grav Should the entity respect gravity?
 function ents_methods:enableGravity ( grav )
@@ -395,6 +428,40 @@ function ents_methods:enableGravity ( grav )
 	phys:Wake()
 	return true
 end
+
+--- Sets the entity drag state
+-- @param drag Should the entity have air resistence?
+function ents_methods:enableDrag ( drag )
+	SF.CheckType( self, ents_metatable )
+	
+	local ent = unwrap( self )
+	if not isValid( ent ) then return false, "entity not valid" end
+	local phys = getPhysObject( ent )
+	if not phys then return false, "entity has no physics object" end
+	
+	if not SF.Permissions.check( SF.instance.player, ent, "entities.enableDrag" ) then SF.throw( "Insufficient permissions", 2 ) end
+
+	phys:EnableDrag( drag and true or false )
+	return true
+end
+
+--- Sets the entity movement state
+-- @param movement Should the entity move?
+function ents_methods:enableMotion ( move )
+	SF.CheckType( self, ents_metatable )
+	
+	local ent = unwrap( self )
+	if not isValid( ent ) then return false, "entity not valid" end
+	local phys = getPhysObject( ent )
+	if not phys then return false, "entity has no physics object" end
+	
+	if not SF.Permissions.check( SF.instance.player, ent, "entities.enableMotion" ) then SF.throw( "Insufficient permissions", 2 ) end
+
+	phys:EnableMotion( move and true or false )
+	phys:Wake()
+	return true
+end
+
 
 local function ent1or2 ( ent, con, num )
 	if not con then return nil end
