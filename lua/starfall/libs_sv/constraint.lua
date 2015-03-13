@@ -6,6 +6,8 @@ local constraint_library, constraint_library_metamethods = SF.Libraries.Register
 local ents_metatable = SF.Entities.Metatable
 local vunwrap = SF.UnwrapObject
 local eunwrap = SF.Entities.Unwrap
+local vwrap = SF.WrapObject
+local ewrap = SF.Entities.Wrap
 local isValid = SF.Entities.IsValid
 
 -- Register privileges
@@ -299,4 +301,33 @@ function constraint_library.breakType(e, typename)
 	if not SF.Permissions.check( SF.instance.player, ent1, "constraints.weld" ) then SF.throw( "Insufficient permissions", 2 ) end
 	
 	constraint.RemoveConstraints(ent1, typename)
+end
+
+
+--- Creates a table of constraints on an entity
+-- @param ent Target entity
+-- @return Table of entity constraints
+function constraint_library.getTable( ent )
+	SF.CheckType( ent, ents_metatable )
+
+	ent = eunwrap( ent )
+	
+	if not isValid( ent ) then return {}, "entity not valid" end
+	if not SF.Permissions.check( SF.instance.player, ent, "constraint.weld" ) then SF.throw( "Insufficient permissions", 2 ) end
+
+	local constraints = constraint.GetTable( ent )
+
+	local ret = {}
+	for k, v in pairs( constraints ) do
+		ret[ k ] = {}
+		
+		ret[ k ].LPos = vwrap( v.LPos )
+		ret[ k ].Ent1 = ewrap( v.Ent1 )
+		ret[ k ].LPos1 = vwrap( v.LPos1 )
+		ret[ k ].Ent2 = ewrap( v.Ent2 )
+		ret[ k ].LPos2 = vwrap( v.LPos2 )
+		ret[ k ].Type = v.Type
+	end
+
+	return ret
 end
