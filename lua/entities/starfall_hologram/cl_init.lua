@@ -52,8 +52,9 @@ function ENT:setupClip ()
     local l = #self.clips
     if l > 0 then
         render.EnableClipping( true )
-        for _, clip in pairs( self.clips ) do
-            if clip.enabled and clip.normal and clip.origin then
+        for i = 1, l do
+            local clip = self.clips[ i ]
+            if clip.enabled then
                 local norm = clip.normal
                 local origin = clip.origin
 
@@ -106,32 +107,32 @@ function ENT:UpdateClip(index, enabled, origin, normal, islocal)
 		clip = {}
 		self.clips[index] = clip
 	end
-
+	
 	clip.enabled = enabled
 	clip.normal = normal
 	clip.origin = origin
 	clip.islocal = islocal
 end
 
-net.Receive( "starfall_hologram_clip", function ()
+net.Receive("starfall_hologram_clip", function ()
 	local entid = net.ReadUInt( 32 )
 	local holoent = Entity( entid )
 	if ( not IsValid( holoent ) ) or ( not holoent.initialised ) then
 		-- Uninitialized
 		msgQueueAdd( "clip", entid, {
 			net.ReadUInt( 16 ),
-			net.ReadBit( ) ~= 0,
-			net.ReadVector( ),
-			net.ReadVector( ),
-			net.ReadBit( ) ~= 0
+			net.ReadBit() ~= 0,
+			Vector( net.ReadDouble(), net.ReadDouble(), net.ReadDouble() ),
+			Vector( net.ReadDouble(), net.ReadDouble(), net.ReadDouble() ),
+			net.ReadBit() ~= 0
 		} )
 	else
 		holoent:UpdateClip (
 			net.ReadUInt( 16 ),
-			net.ReadBit( ) ~= 0,
-			net.ReadVector( ),
-			net.ReadVector( ),
-			net.ReadBit( ) ~= 0
+			net.ReadBit() ~= 0,
+			Vector( net.ReadDouble(), net.ReadDouble(), net.ReadDouble() ),
+			Vector( net.ReadDouble(), net.ReadDouble(), net.ReadDouble() ),
+			net.ReadBit() ~= 0
 		)
 	end
 end )

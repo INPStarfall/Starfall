@@ -313,7 +313,7 @@ function constraint_library.getTable( ent )
 	ent = eunwrap( ent )
 	
 	if not isValid( ent ) then return {}, "entity not valid" end
-	if not SF.Permissions.check( SF.instance.player, ent, "constraint.weld" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, ent, "constraint.any" ) then SF.throw( "Insufficient permissions", 2 ) end
 
 	local constraints = constraint.GetTable( ent )
 
