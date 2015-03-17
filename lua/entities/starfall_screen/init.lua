@@ -109,6 +109,8 @@ function ENT:CodeSent(ply, files, mainfile)
 	if ppdata.sharedscreen then		
 		local ok, instance = SF.Compiler.Compile( files, context, mainfile, ply, { entity = self } )
 		if not ok then self:Error(instance) return end
+
+		hook.Run( "sf_initialize", self:EntIndex( ) )
 		
 		instance.runOnError = function(inst,...) self:Error(...) end
 
@@ -126,7 +128,7 @@ function ENT:CodeSent(ply, files, mainfile)
 		end
 		
 		if not self.instance then return end
-		
+
 		local r,g,b,a = self:GetColor()
 		self:SetColor(Color(255, 255, 255, a))
 		self.sharedscreen = true

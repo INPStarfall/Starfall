@@ -24,11 +24,13 @@ function ENT:Compile ( codetbl, mainfile )
 	
 	local ok, instance = SF.Compiler.Compile( codetbl, context, mainfile, self.owner, { entity = self } )
 	if not ok then self:Error( instance ) return end
+
+	hook.Run( "sf_initialize", self:EntIndex( ) )
 	
 	instance.runOnError = function ( inst, ... ) self:Error( ... ) end
 	
 	self.instance = instance
-	
+
 	local ok, msg, traceback = instance:initialize ()
 	if not ok then
 		self:Error( msg, traceback )

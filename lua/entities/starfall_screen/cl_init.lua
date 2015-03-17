@@ -135,7 +135,9 @@ function ENT:CodeSent ( files, main, owner )
 	self.owner = owner
 	local ok, instance = SF.Compiler.Compile( files, context, main, owner, { entity = self, render = {} } )
 	if not ok then self:Error( instance ) return end
-	
+
+	hook.Run( "sf_initialize", self:EntIndex( ) )
+
 	instance.runOnError = function ( inst, ... ) self:Error( ... ) end
 	
 	self.instance = instance
