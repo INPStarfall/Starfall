@@ -14,6 +14,8 @@ end
 function ENT:OnRemove ()
 	if not self.instance then return end
 
+	hook.Run( "sf_deinitialize", self:EntIndex( ) )
+
 	self.instance:deinitialize()
 	self.instance = nil
 end
