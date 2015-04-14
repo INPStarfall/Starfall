@@ -1,4 +1,5 @@
-TOOL.Category		= "Wire - Display"
+TOOL.Category		= "Visuals/Screens"
+TOOL.Wire_MultiCategories = "Chips, Gates" -- Also add this to the chips, gates category so that it can be found near the processor
 TOOL.Name			= "Starfall - Screen"
 TOOL.Command		= nil
 TOOL.ConfigName		= ""
