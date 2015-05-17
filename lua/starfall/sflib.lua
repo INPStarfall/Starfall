@@ -185,26 +185,31 @@ end
 -- @param typ A string type or metatable.
 -- @param level Level at which to error at. 3 is added to this value. Default is 0.
 -- @param default A value to return if val is nil.
-function SF.CheckType(val, typ, level, default)
+-- @param onFailure Execute when value mismatches type and throw a custom error if necessary, arguments: val, typ, level + 1, typname, funcname
+function SF.CheckType( val, typ, level, default, onFailure )
 	if val == nil and default then return default
-	elseif type(val) == typ then return val
+	elseif type( val ) == typ then return val
 	else
-		local meta = dgetmeta(val)
-		if meta == typ or (meta and meta.__supertypes and meta.__supertypes[typ]) then return val end
+		local meta = dgetmeta( val )
+		if meta == typ or ( meta and meta.__supertypes and meta.__supertypes[ typ ] ) then return val end
 		
 		-- Failed, throw error
-		level = (level or 0) + 3
+		level = ( level or 0 ) + 3
 		
 		local typname
-		if type(typ) == "table" then
-			assert(typ.__metatable and type(typ.__metatable) == "string")
+		if type( typ ) == "table" then
+			assert( typ.__metatable and type( typ.__metatable ) == "string" )
 			typname = typ.__metatable
 		else
 			typname = typ
 		end
 		
-		local funcname = debug.getinfo(level-1, "n").name or "<unnamed>"
-		local mt = getmetatable(val)
+		local funcname = debug.getinfo( level - 1, "n" ).name or "<unnamed>"
+		local mt = getmetatable( val )
+		
+		if onFailure and type( onFailure ) == "function" then
+			onFailure( val, typ, level + 1, typname, funcname )
+		end
 		SF.throw( "Type mismatch (Expected " .. typname .. ", got " .. ( type( mt ) == "string" and mt or type( val ) ) .. ") in function " .. funcname, level )
 	end
 end
