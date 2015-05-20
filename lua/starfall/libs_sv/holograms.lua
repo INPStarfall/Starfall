@@ -18,6 +18,13 @@ SF.Holograms.personalquota = CreateConVar( "sf_holograms_personalquota", "300", 
 SF.Holograms.burstrate = CreateConVar( "sf_holograms_burstrate", "10", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
     "The default number of holograms allowed to spawn in a short interval of time via Starfall scripts for a single instance ( burst )" )
 
+SF.Holograms.timerdelay = CreateConVar( "sf_holograms_timerdelay", "0.25", {FCVAR_ARCHIVE,FCVAR_REPLICATED},
+    "The default rate at which the burst counter is reduced ( rate at which players can spawn holograms )" )
+
+cvars.AddChangeCallback( "sf_holograms_timerdelay", function ()
+	timer.Adjust( "SF_Hologram_BurstCounter", SF.Holograms.timerdelay:GetFloat() or 1/4, 0, burstCounter )
+end )
+
 SF.Holograms.Methods = hologram_methods
 SF.Holograms.Metatable = hologram_metamethods
 
@@ -277,13 +284,14 @@ local function personal_max_reached ( i )
     return plyCount[ i.player ] >= SF.Holograms.personalquota:GetInt()
 end
 
-timer.Create( "SF_Hologram_BurstCounter", 1/4, 0, function ()
+local function burstCounter ()
     for i, _ in pairs( insts ) do
         if i.data.holograms.burst < SF.Holograms.burstrate:GetInt() or 10 then -- Should allow for dynamic changing of burst rate from the server.
             i.data.holograms.burst = i.data.holograms.burst + 1
         end
     end
-end )
+end
+timer.Create( "SF_Hologram_BurstCounter", SF.Holograms.timerdelay:GetFloat() or 1/4, 0, burstCounter )
 
 --- Creates a hologram.
 -- @server
