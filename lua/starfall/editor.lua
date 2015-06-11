@@ -30,6 +30,7 @@ if CLIENT then
 		["do"] = true,
 		["repeat"] = true,
 		["until"] = true,
+		["break"] = true,
 		
 		["function"] = true,
 		["local"] = true,
@@ -156,7 +157,7 @@ if CLIENT then
 	end
 
 	local function findMultilineEnding(self,row,what) -- also used to close multiline comments
-		if self:NextPattern( ".-%]%]" ) then -- Found ending
+		if self:NextPattern( ".-%]" .. string.rep( "=", self.multilineEqualCount ) .. "%]" ) then -- Found matching ending
 			return true
 		end
 		
@@ -171,25 +172,28 @@ if CLIENT then
 		if row == self.Scroll[1] then
 			-- This code checks if the visible code is inside a string or a block comment
 			self.multiline = nil
+			self.multilineEqualCount = nil
 			local singleline = false
 
 			local str = string_gsub( table_concat( self.Rows, "\n", 1, self.Scroll[1]-1 ), "\r", "" )
 			
 			for before, char, after in string_gmatch( str, "()([%-\"'\n%[%]])()" ) do
 				before = string_sub( str, before-1, before-1 )
-				after = string_sub( str, after, after+2 )
+				--after = string_sub( str, after, after+2 )
 				
 				if not self.multiline and not singleline then
-					if char == '"' or char == "'" or (char == "-" and after[1] == "-" and after ~= "-[[") then
+					if char == '"' or char == "'" or (char == "-" and after[1] == "-" and after:find( "^-%[=*%[" ) ) then
 						singleline = true
-					elseif char == "-" and after == "-[[" then
+					elseif char == "-" and after:find( "^-%[=*%[" ) then
 						self.multiline = "comment"
-					elseif char == "[" and after[1] == "[" then
+						self.multilineEqualCount = after:find( "%[", 2 ) - 2 --Counts amount of "="
+					elseif char == "[" and after:find( "^=*%[" ) then
 						self.multiline = "string"
+						self.multilineEqualCount = after:find( "%[", 2 ) - 2 --Counts amount of "="
 					end
 				elseif singleline and ((char == "'" or char == '"') and before ~= "\\" or char == "\n") then
 					singleline = false
-				elseif self.multiline and char == "]" and after[1] == "]" then
+				elseif self.multiline and char == "]" and after:find( "^=*]" ) and after:find( "%]", 2 ) == self.multilineEqualCount then
 					self.multiline = nil
 				end
 			end
@@ -222,6 +226,7 @@ if CLIENT then
 			local spaces = self:SkipPattern( "^%s*" )
 			if spaces then addToken( "comment", spaces ) end
 	
+			local position = self.position
 			if self:NextPattern( "^%a[%w_]*" ) then -- Variables and keywords
 				if keywords[self.tokendata] then
 					addToken( "keyword", self.tokendata )
@@ -231,10 +236,12 @@ if CLIENT then
 			elseif self:NextPattern( "^%d*%.?%d+" ) then -- Numbers
 				addToken( "number", self.tokendata )
 			elseif self:NextPattern( "^%-%-" ) then -- Comment
+				position = self.position
 				if self:NextPattern( "^@" ) then -- ppcommand
 					self:NextPattern( ".*" ) -- Eat all the rest
 					addToken( "ppcommand", self.tokendata )
-				elseif self:NextPattern( "^%[%[" ) then -- Multi line comment
+				elseif self:NextPattern( "^%[=*%[" ) then -- Multi line comment
+					self.multilineEqualCount = self.line:find( "%[", position + 1 ) - ( position + 1 ) --Counts amount of "="
 					if findMultilineEnding( self, row, "comment" ) then -- Ending found
 						addToken( "comment", self.tokendata )
 					else -- Ending not found
@@ -252,7 +259,8 @@ if CLIENT then
 					self:NextPattern( ".*" ) -- Eat everything
 					addToken( "string", self.tokendata )
 				end
-			elseif self:NextPattern( "^%[%[" ) then -- Multi line strings
+			elseif self:NextPattern( "^%[=*%[" ) then -- Multi line strings
+				self.multilineEqualCount = self.line:find( "%[", position + 1 ) - ( position + 1 ) --Counts amount of "="
 				if findMultilineEnding( self, row, "string" ) then -- Ending found
 					addToken( "string", self.tokendata )
 				else -- Ending not found
