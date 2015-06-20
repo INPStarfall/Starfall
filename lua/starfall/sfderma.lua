@@ -447,7 +447,7 @@ vgui.Register( "StarfallButton", PANEL, "DButton" )
 -- Starfall Panel
 PANEL = {}
 PANEL.Paint = function ( panel, w, h )
-	draw.RoundedBox( 0, 0, 0, w, h, SF.Editor.colors.medlight )
+	draw.RoundedBox( 0, 0, 0, w, h, SF.Editor.colors.light )
 end
 vgui.Register( "StarfallPanel", PANEL, "DPanel" )
 -- End Starfall Panel

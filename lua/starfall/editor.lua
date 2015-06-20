@@ -426,7 +426,11 @@ if CLIENT then
 		local buttonHelper = vgui.Create( "StarfallButton", buttonHolder )	
 		buttonHelper:SetText( "SF Helper" )
 		function buttonHelper:DoClick ()
-			SF.Helper.show()
+			if SF.Helper.Frame and SF.Helper.Frame:IsVisible() then
+				SF.Helper.Frame:close()
+			else
+				SF.Helper.show()
+			end
 		end
 		buttonHolder:addButton( "Helper", buttonHelper )
 
