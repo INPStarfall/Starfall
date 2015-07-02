@@ -14,10 +14,10 @@ surface.CreateFont( "Starfall_ErrorFont", {
 } )
 
 
-local dlScreen = nil
-local dlOwner = nil
-local dlMain = nil
-local dlFiles = nil
+local dlScreen
+local dlOwner
+local dlMain
+local dlFiles
 local hashes = {}
 
 net.Receive( "starfall_screen_download", function ( len )
@@ -185,7 +185,7 @@ function ENT:Draw ()
 	Wire_Render( self )
 	
 	if self.renderfunc then
-		self.GPU:RenderToGPU(self.renderfunc)
+		self.GPU:RenderToGPU( self.renderfunc )
 	end
 	
 	self.GPU:Render()
