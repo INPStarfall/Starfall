@@ -6,7 +6,7 @@ TOOL.ConfigName		= ""
 TOOL.Tab			= "Wire"
 
 -- ------------------------------- Sending / Recieving ------------------------------- --
-include("starfall/sflib.lua")
+include( "starfall/sflib.lua" )
 
 local MakeSF
 local RequestSend
@@ -15,50 +15,50 @@ TOOL.ClientConVar[ "Model" ] = "models/hunter/plates/plate2x2.mdl"
 cleanup.Register( "starfall_screen" )
 
 if SERVER then
-	util.AddNetworkString("starfall_screen_requpload")
-	util.AddNetworkString("starfall_screen_upload")
+	util.AddNetworkString( "starfall_screen_requpload" )
+	util.AddNetworkString( "starfall_screen_upload" )
 	
-	net.Receive("starfall_screen_upload", function(len, ply)
+	net.Receive( "starfall_screen_upload", function ( len, ply )
 		local ent = net.ReadEntity()
 		if not ent or not ent:IsValid() then
-			ErrorNoHalt("SF: Player "..ply:GetName().." tried to send code to a nonexistant entity.\n")
+			ErrorNoHalt( "SF: Player " .. ply:GetName() .. " tried to send code to a nonexistant entity.\n" )
 			return
 		end
 		
 		if ent:GetClass() ~= "starfall_screen" then
-			ErrorNoHalt("SF: Player "..ply:GetName().." tried to send code to a non-starfall screen entity.\n")
+			ErrorNoHalt( "SF: Player " .. ply:GetName() .. " tried to send code to a non-starfall screen entity.\n" )
 			return
 		end
 		
 		local mainfile = net.ReadString()
-		local numfiles = net.ReadUInt(16)
+		local numfiles = net.ReadUInt( 16 )
 		local task = {
 			mainfile = mainfile,
 			files = {},
 		}
 		
-		for i=1,numfiles do
+		for i = 1, numfiles do
 			local filename = net.ReadString()
 			local code = net.ReadString()
-			task.files[filename] = code
+			task.files[ filename ] = code
 		end
 		
-		ent:CodeSent(ply,task)
-	end)
+		ent:CodeSent( ply, task )
+	end )
 	
-	RequestSend = function(ply, ent)
-		net.Start("starfall_screen_requpload")
-		net.WriteEntity(ent)
-		net.Send(ply)
+	RequestSend = function ( ply, ent )
+		net.Start( "starfall_screen_requpload" )
+		net.WriteEntity( ent )
+		net.Send( ply )
 	end
 	
-	CreateConVar('sbox_maxstarfall_screen', 3, {FCVAR_REPLICATED,FCVAR_NOTIFY,FCVAR_ARCHIVE})
+	CreateConVar( "sbox_maxstarfall_screen", 3, { FCVAR_REPLICATED, FCVAR_NOTIFY, FCVAR_ARCHIVE } )
 	
-	function MakeSF( pl, Pos, Ang, model)
+	function MakeSF ( pl, Pos, Ang, model)
 		if not pl:CheckLimit( "starfall_screen" ) then return false end
 
 		local sf = ents.Create( "starfall_screen" )
-		if not IsValid(sf) then return false end
+		if not IsValid( sf ) then return false end
 
 		sf:SetAngles( Ang )
 		sf:SetPos( Pos )
@@ -79,7 +79,7 @@ else
 	language.Add( "undone_Starfall Screen", "Undone Starfall Screen" )
 end
 
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick ( trace )
 	if not trace.HitPos then return false end
 	if trace.Entity:IsPlayer() then return false end
 	if CLIENT then return true end
@@ -88,17 +88,17 @@ function TOOL:LeftClick( trace )
 
 	if trace.Entity:IsValid() and trace.Entity:GetClass() == "starfall_screen" then
 		local ent = trace.Entity
-		if not SF.RequestCode(ply, function(mainfile, files)
+		if not SF.RequestCode( ply, function ( mainfile, files )
 			if not mainfile then return end
-			if not IsValid(ent) then return end
-			ent:CodeSent(ply, files, mainfile)
-		end) then
+			if not IsValid( ent ) then return end
+			ent:CodeSent( ply, files, mainfile )
+		end ) then
 			SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 		end
 		return true
 	end
 	
-	self:SetStage(0)
+	self:SetStage( 0 )
 
 	local model = self:GetClientInfo( "Model" )
 	if not self:GetSWEP():CheckLimit( "starfall_screen" ) then return false end
@@ -106,12 +106,12 @@ function TOOL:LeftClick( trace )
 	local Ang = trace.HitNormal:Angle()
 	Ang.pitch = Ang.pitch + 90
 
-	local sf = MakeSF( ply, trace.HitPos, Ang, model)
+	local sf = MakeSF( ply, trace.HitPos, Ang, model )
 
 	local min = sf:OBBMins()
 	sf:SetPos( trace.HitPos - trace.HitNormal * min.z )
 
-	local const = WireLib.Weld(sf, trace.Entity, trace.PhysicsBone, true)
+	local const = WireLib.Weld( sf, trace.Entity, trace.PhysicsBone, true )
 
 	undo.Create( "Starfall Screen" )
 		undo.AddEntity( sf )
@@ -121,48 +121,48 @@ function TOOL:LeftClick( trace )
 
 	ply:AddCleanup( "starfall_screen", sf )
 	
-	if not SF.RequestCode(ply, function(mainfile, files)
+	if not SF.RequestCode( ply, function ( mainfile, files )
 		if not mainfile then return end
-		if not IsValid(sf) then return end
-		sf:CodeSent(ply, files, mainfile)
-	end) then
+		if not IsValid( sf ) then return end
+		sf:CodeSent( ply, files, mainfile )
+	end ) then
 		SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 	end
 
 	return true
 end
 
-function TOOL:RightClick( trace )
-	if SERVER then self:GetOwner():SendLua("SF.Editor.open()") end
+function TOOL:RightClick ( trace )
+	if SERVER then self:GetOwner():SendLua( "SF.Editor.open()" ) end
 	return false
 end
 
-function TOOL:Reload(trace)
+function TOOL:Reload ( trace )
 	return false
 end
 
-function TOOL:DrawHUD()
+function TOOL:DrawHUD ()
 end
 
-function TOOL:Think()
+function TOOL:Think ()
 end
 
 if CLIENT then
 	local lastclick = CurTime()
 	
-	local function GotoDocs(button)
-		gui.OpenURL("http://sf.inp.io") -- old one: http://colonelthirtytwo.net/sfdoc/
+	local function GotoDocs ( button )
+		gui.OpenURL( "http://sf.inp.io" ) -- old one: http://colonelthirtytwo.net/sfdoc/
 	end
 	
-	function TOOL.BuildCPanel(panel)
+	function TOOL.BuildCPanel ( panel )
 		panel:AddControl( "Header", { Text = "#Tool.starfall_screen.name", Description = "#Tool.starfall_screen.desc" } )
 		
 		local modelpanel = WireDermaExts.ModelSelect( panel, "starfall_screen_Model", list.Get( "WireScreenModels" ), 2 )
-		panel:AddControl("Label", {Text = ""})
+		panel:AddControl( "Label", { Text = "" } )
 		
-		local docbutton = vgui.Create("DButton" , panel)
-		panel:AddPanel(docbutton)
-		docbutton:SetText("Starfall Documentation")
+		local docbutton = vgui.Create( "DButton" , panel )
+		panel:AddPanel( docbutton )
+		docbutton:SetText( "Starfall Documentation" )
 		docbutton.DoClick = GotoDocs
 		
 		local filebrowser = vgui.Create( "StarfallFileBrowser" )
@@ -171,7 +171,7 @@ if CLIENT then
 		filebrowser:SetSize( 235,400 )
 		
 		local lastClick = 0
-		filebrowser.tree.DoClick = function( self, node )
+		filebrowser.tree.DoClick = function ( self, node )
 			if CurTime() <= lastClick + 0.5 then
 				if not node:GetFileName() or string.GetExtensionFromFilename( node:GetFileName() ) ~= "txt" then return end
 				local fileName = string.gsub( node:GetFileName(), "starfall/", "", 1 )
@@ -191,9 +191,9 @@ if CLIENT then
 			lastClick = CurTime()
 		end
 		
-		local openeditor = vgui.Create("DButton", panel)
-		panel:AddPanel(openeditor)
-		openeditor:SetText("Open Editor")
+		local openeditor = vgui.Create( "DButton", panel )
+		panel:AddPanel( openeditor )
+		openeditor:SetText( "Open Editor" )
 		openeditor.DoClick = SF.Editor.open
 	end
 end
