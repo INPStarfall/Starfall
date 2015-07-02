@@ -100,7 +100,7 @@ end
 -- @field CONTENTS_TRANSLUCENT
 -- @field CONTENTS_LADDER
 -- @field CONTENTS_HITBOX
-local trace_library, _ = SF.Libraries.Register("trace")
+local trace_library, _ = SF.Libraries.Register( "trace" )
 
 -- Material Enumeration
 trace_library.MAT_ANTLION = MAT_ANTLION
@@ -201,22 +201,22 @@ end
 local wrap
 local unwrap
 
-local function postload()
+local function postload ()
 	wrap = SF.Entities.Wrap
 	unwrap = SF.Entities.Unwrap
 end
-SF.Libraries.AddHook("postload",postload)
+SF.Libraries.AddHook( "postload", postload )
 
-local function convertFilter(filter)
-	if unwrap(filter) then
-		return {filter}
+local function convertFilter ( filter )
+	if unwrap( filter ) then
+		return { filter }
 	else
 		local l = {}
 		local count = 1
-		for i=1,#filter do
-			local unwrapped = unwrap(filter[i])
+		for i = 1, #filter do
+			local unwrapped = unwrap( filter[ i ] )
 			if unwrapped then
-				l[count] = unwrapped
+				l[ count ] = unwrapped
 				count = count + 1
 			end
 		end
