@@ -8,7 +8,7 @@ local http_max_active = CreateConVar( "sf_http_max_active", "3", { FCVAR_ARCHIVE
 
 -- Initializes the lastRequest variable to a value which ensures that the first call to httpRequestReady returns true
 -- and the "active requests counter" to 0
-SF.Libraries.AddHook( "initialize", function( instance )
+SF.Libraries.AddHook( "initialize", function ( instance )
 	instance.data.http = {
 		lastRequest = 0,
 		active = 0
