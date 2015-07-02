@@ -14,18 +14,18 @@ SF.Compiler = {}
 -- @param dontpreprocess Set to true to skip preprocessing
 -- @return True if no errors, false if errors occured.
 -- @return The compiled instance, or the error message.
-function SF.Compiler.Compile(code, context, mainfile, player, data, dontpreprocess)
-	if type(code) == "string" then
+function SF.Compiler.Compile ( code, context, mainfile, player, data, dontpreprocess )
+	if type( code ) == "string" then
 		mainfile = mainfile or "generic"
-		code = {mainfile=code}
+		code = { mainfile = code }
 	end
 	
-	local instance = setmetatable({},SF.Instance)
+	local instance = setmetatable( {}, SF.Instance )
 	
 	data = data or {}
 	
 	instance.player = player
-	instance.env = setmetatable({},context.env)
+	instance.env = setmetatable( {}, context.env )
 	instance.env._G = instance.env
 	instance.data = data
 	instance.ppdata = {}
@@ -53,23 +53,23 @@ function SF.Compiler.Compile(code, context, mainfile, player, data, dontpreproce
 		end
 	end
 	
-	for filename, source in pairs(code) do
+	for filename, source in pairs( code ) do
 		if not dontpreprocess then
 			SF.Preprocessor.ParseDirectives( filename, source, context.directives, instance.ppdata, instance )
 		else
 			print( "No preprocess" )
 		end
 		
-		if string.match(source, "^[%s\n]*$") then
+		if string.match( source, "^[%s\n]*$" ) then
 			-- Lua doesn't have empty statements, so an empty file gives a syntax error
-			instance.scripts[filename] = function() end
+			instance.scripts[ filename ] = function () end
 		else
-			local func = CompileString(source, "SF:"..filename, false)
-			if type(func) == "string" then
+			local func = CompileString( source, "SF:"..filename, false )
+			if type( func ) == "string" then
 				return false, func
 			end
-			debug.setfenv(func, instance.env)
-			instance.scripts[filename] = func
+			debug.setfenv( func, instance.env )
+			instance.scripts[ filename ] = func
 		end
 	end
 	
