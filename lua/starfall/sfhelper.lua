@@ -13,11 +13,11 @@ local docs_set = false
 local settings_set = false
 
 if CLIENT then
-	function helper.getDocs()
-		http.Fetch( "http://sf.inp.io/doc.json", function( body, len, headers, code )
+	function helper.getDocs ()
+		http.Fetch( "http://sf.inp.io/doc.json", function ( body, len, headers, code )
 			SF.Docs = util.JSONToTable( body )
 			docs_set = true
-		end, function( error ) print("Starfall failed to load documentation, Error: ", error) end )
+		end, function( error ) print( "Starfall failed to load documentation, Error: ", error ) end )
 	end
 	helper.getDocs()
 
@@ -28,7 +28,7 @@ if CLIENT then
 	CreateClientConVar( "sf_helper_divheight", 400, true, false )
 end
 
-local function saveSettings()
+local function saveSettings ()
 	RunConsoleCommand( "sf_helper_width", helper.Frame:GetWide() )
 	RunConsoleCommand( "sf_helper_height", helper.Frame:GetTall() )
 	local x, y = helper.Frame:GetPos()
@@ -37,7 +37,7 @@ local function saveSettings()
 	RunConsoleCommand( "sf_helper_divheight", helper.DocView.Div:GetTopHeight() )
 end
 
-function helper.create()
+function helper.create ()
 
 	helper.Views = {}
 
@@ -50,7 +50,7 @@ function helper.create()
 	helper.Frame:SetVisible( false )
 	helper.Frame:SetTitle( "SF Helper" )
 	helper.Frame._PerformLayout = helper.Frame.PerformLayout
-	function helper.Frame:PerformLayout( ... )
+	function helper.Frame:PerformLayout ( ... )
 		local w, h = helper.Frame:GetSize()
 		if w < 620 then w = 620 end
 		if h < 410 then h = 410 end
@@ -59,7 +59,7 @@ function helper.create()
 		self:_PerformLayout( ... )
 		helper.resize( )
 	end   
-	function helper.Frame:OnClose()
+	function helper.Frame:OnClose ()
 		saveSettings()
 	end           
 
@@ -71,7 +71,7 @@ function helper.create()
 	local lists = {}
 	local panels = {}
 
-	local function createList( name, listfunc )
+	local function createList ( name, listfunc )
 		local Cat = helper.CatList:Add( name )
 		if name ~= "SF Helper" then Cat:SetExpanded( false ) end
 		local DPanel = vgui.Create( "DPanel", Cat )
@@ -89,7 +89,7 @@ function helper.create()
 		List:SetSize( 113, height )
 
 		List._OnRowSelected = List.OnRowSelected
-		function List:OnRowSelected( LineID, Line )
+		function List:OnRowSelected ( LineID, Line )
 			for k, v in pairs( lists ) do
 				if v ~= List then
 					v:ClearSelection()
@@ -103,7 +103,7 @@ function helper.create()
 	end
 
 	helper.CatList._PerformLayout = helper.CatList.PerformLayout
-	function helper.CatList:PerformLayout( ... )
+	function helper.CatList:PerformLayout ( ... )
 		self:_PerformLayout( ... )
 		for k, v in pairs( panels ) do
 			v:SetSize( self:GetCanvas():GetWide() - 8, v:GetTall() )
@@ -113,7 +113,7 @@ function helper.create()
 		end
 	end
 
-	createList( "SF Helper", function( List ) 
+	createList( "SF Helper", function ( List )
 		local height = 16;
 		List:AddLine( "Index" )
 		height = height + 17
@@ -121,7 +121,7 @@ function helper.create()
 		height = height + 17
 		List:SelectFirstItem()
 
-		function List:OnRowSelected( LineID, Line )
+		function List:OnRowSelected ( LineID, Line )
 			if LineID == 1 then
 				helper.openView( "Index" )
 			else
@@ -132,14 +132,14 @@ function helper.create()
 		return height
 	end )
 
-	createList( "Preprocessor directives", function( List )
+	createList( "Preprocessor directives", function ( List )
 		local height = 16
-		for _, directive in ipairs(SF.Docs.directives) do
+		for _, directive in ipairs( SF.Docs.directives ) do
 			List:AddLine( "--@" .. directive )
 			height = height + 17
 		end
 
-		function List:OnRowSelected( LineID, Line )
+		function List:OnRowSelected ( LineID, Line )
 			helper.openView( "Doc" )
 			helper.updateDocView( Line, 4 )
 			helper.DocView.DirectivesList:SelectItem( helper.DocView.DirectivesList:GetLine( LineID ) )
@@ -148,9 +148,9 @@ function helper.create()
 		return height
 	end )
 
-	createList( "Libraries", function( List )
+	createList( "Libraries", function ( List )
 		local height = 16
-		for _, modulename in ipairs(SF.Docs.libraries) do
+		for _, modulename in ipairs( SF.Docs.libraries ) do
 			List:AddLine( modulename )
 			height = height + 17
 		end
@@ -163,14 +163,14 @@ function helper.create()
 		return height
 	end )
 	
-	createList( "Types", function( List )
+	createList( "Types", function ( List )
 		local height = 16
-		for _, typename in ipairs(SF.Docs.classes) do
+		for _, typename in ipairs( SF.Docs.classes ) do
 			List:AddLine( typename )
 			height = height + 17
 		end
 
-		function List:OnRowSelected( LineID, Line )
+		function List:OnRowSelected ( LineID, Line )
 			helper.openView( "Doc" )
 			helper.updateDocView( Line, 2 )
 		end
@@ -178,14 +178,14 @@ function helper.create()
 		return height
 	end )
 	
-	createList( "Hooks", function( List )
+	createList( "Hooks", function ( List )
 		local height = 16
-		for _, hookname in ipairs(SF.Docs.hooks) do
+		for _, hookname in ipairs( SF.Docs.hooks ) do
 			List:AddLine( hookname )
 			height = height + 17
 		end
 
-		function List:OnRowSelected( LineID, Line )
+		function List:OnRowSelected ( LineID, Line )
 			helper.openView( "Doc" )
 			helper.updateDocView( Line, 3 )
 			helper.DocView.HooksList:SelectItem( helper.DocView.HooksList:GetLine( LineID ) )
@@ -194,7 +194,7 @@ function helper.create()
 		return height
 	end )
 
-	function helper.clearViews()
+	function helper.clearViews ()
 		for _, View in pairs( helper.Views ) do
 			View:SetVisible( false )
 			if View.Info then
@@ -204,7 +204,7 @@ function helper.create()
 		end
 	end
 
-	function helper.openView( view )
+	function helper.openView ( view )
 		helper.clearViews()
 		if helper.Views[ view ] then
 			helper.Views[ view ]:SetVisible( true )
@@ -253,7 +253,7 @@ function helper.create()
 	for _, modulename in ipairs( SF.Docs.libraries ) do
 		helper.IndexLibs:AddLine( modulename, string.Trim( SF.Docs.libraries[ modulename ].summary ) )
 	end
-	function helper.IndexLibs:OnRowSelected( LineID, Line )
+	function helper.IndexLibs:OnRowSelected ( LineID, Line )
 		helper.IndexHooks:ClearSelection()
 		lists[ "Libraries" ]:GetParent():GetParent():DoExpansion( true )
 		lists[ "Libraries" ]:SelectItem( lists[ "Libraries" ]:GetLine( LineID ) )
@@ -266,7 +266,7 @@ function helper.create()
 	for _, hookname in ipairs(SF.Docs.hooks) do
 		helper.IndexHooks:AddLine( hookname, string.Trim( SF.Docs.hooks[ hookname ].summary ) )
 	end
-	function helper.IndexHooks:OnRowSelected( LineID, Line )
+	function helper.IndexHooks:OnRowSelected ( LineID, Line )
 		helper.IndexLibs:ClearSelection()
 		lists[ "Hooks" ]:GetParent():GetParent():DoExpansion( true )
 		lists[ "Hooks" ]:SelectItem( lists[ "Hooks" ]:GetLine( LineID ) )
@@ -274,7 +274,7 @@ function helper.create()
 
 	---- Doc View ----
 	------------------
-	function helper.updateDocView( Line, Type )
+	function helper.updateDocView ( Line, Type )
 		local view = helper.DocView
 		view.DocName = Line:GetColumnText( 1 )
 
@@ -358,7 +358,7 @@ function helper.create()
 	helper.DocView.Deprecated.m_colText = Color( 210, 0, 0 )
 
 	helper.LabelLists = {}
-	local function createDocList( name, func, update )
+	local function createDocList ( name, func, update )
 		local label = Label( name, helper.DocView.Panel )
 		label:SetPos( 10, 40 )
 		label:SetFont( "HelperTitle" )
@@ -371,9 +371,9 @@ function helper.create()
 		list:AddColumn( name ):SetFixedWidth( 150 )
 		list:AddColumn( "Description" )
 		helper.DocView[ name .. "List" ] = list
-		helper.LabelLists[ #helper.LabelLists + 1 ] = { label=label, list=list, func=func, name=string.lower( name ) }
+		helper.LabelLists[ #helper.LabelLists + 1 ] = { label = label, list = list, func = func, name = string.lower( name ) }
 
-		function list:OnRowSelected( LineID, Line )
+		function list:OnRowSelected ( LineID, Line )
 			for _, labellist in pairs( helper.LabelLists ) do 
 				if labellist.list ~= list then
 					labellist.list:ClearSelection()
@@ -382,7 +382,7 @@ function helper.create()
 			update( LineID, Line )
 		end
 	end
-	createDocList( "Functions", function( view, doc )
+	createDocList( "Functions", function ( view, doc )
 		local height = 16
 		for _, func in ipairs( doc.functions ) do
 			local func_data = doc.functions[ func ]
@@ -396,10 +396,10 @@ function helper.create()
 			height = height + 17
 		end
 		return height
-	end, function( LineID, Line )
+	end, function ( LineID, Line )
 		helper.updateInfoPanel( helper.DocView.Doc.functions[ Line.func ] )
 	end )
-	createDocList( "Tables", function( view, doc )
+	createDocList( "Tables", function ( view, doc )
 		local height = 16
 		for _, table in ipairs( doc.tables ) do
 			local table_data = doc.tables[ table ]
@@ -408,10 +408,10 @@ function helper.create()
 			height = height + 17
 		end
 		return height
-	end, function( LineID, Line )
+	end, function ( LineID, Line )
 		helper.updateInfoPanel( helper.DocView.Doc.tables[ Line.table ] )
 	end  )
-	createDocList( "Fields", function( view, doc )
+	createDocList( "Fields", function ( view, doc )
 		local height = 16
 		for _, field in ipairs( doc.fields ) do
 			local field_data = doc.fields[ field ]
@@ -419,8 +419,8 @@ function helper.create()
 			height = height + 17
 		end
 		return height
-	end, function( LineID, Line)  end )
-	createDocList( "Methods", function( view, doc )
+	end, function ( LineID, Line)  end )
+	createDocList( "Methods", function ( view, doc )
 		local height = 16
 		for _, func in ipairs( doc.methods ) do
 			local func_data = doc.methods[ func ]
@@ -434,10 +434,10 @@ function helper.create()
 			height = height + 17
 		end
 		return height
-	end, function( LineID, Line )
+	end, function ( LineID, Line )
 		helper.updateInfoPanel( helper.DocView.Doc.methods[ Line.func ] )
 	end  )
-	createDocList( "Hooks", function( view, doc )
+	createDocList( "Hooks", function ( view, doc )
 		local height = 16
 		for _, hook in ipairs( doc.hooks ) do
 			local hook_data = doc.hooks[ hook ]
@@ -446,10 +446,10 @@ function helper.create()
 			height = height + 17
 		end
 		return height
-	end, function( LineID, Line )
+	end, function ( LineID, Line )
 		helper.updateInfoPanel( helper.DocView.Doc.hooks[ Line.hook ] )
 	end  )
-	createDocList( "Directives", function( view, doc )
+	createDocList( "Directives", function ( view, doc )
 		local height = 16
 		for _, directive in ipairs( doc.directives ) do
 			local directive_data = doc.directives[ directive ]
@@ -458,14 +458,14 @@ function helper.create()
 			height = height + 17
 		end
 		return height
-	end, function( LineID, Line )
+	end, function ( LineID, Line )
 		helper.updateInfoPanel( helper.DocView.Doc.directives[ Line.directive ], true )
 	end  )
 
 
 	---- InfoPanel ----
 	-------------------
-	function helper.updateInfoPanel( func, directive )
+	function helper.updateInfoPanel ( func, directive )
 		local infopanel = helper.DocView.InfoPanel
 		helper.DocView.Info:GetVBar():SetScroll( 0 )
 
@@ -558,7 +558,7 @@ function helper.create()
 	helper.DocView.Div:SetDividerHeight( 5 )
 	helper.DocView.Div:SetVisible( false )
 	helper.DocView.Div._PerformLayout = helper.DocView.Div.PerformLayout
-	function helper.DocView.Div:PerformLayout()
+	function helper.DocView.Div:PerformLayout ()
 		helper.DocView.Div:_PerformLayout()
 		helper.resize()
 	end
@@ -643,7 +643,7 @@ function helper.create()
 
 end
 
-function helper.show()
+function helper.show ()
 	if not docs_set then
 		helper.getDocs()
 		return
@@ -655,7 +655,7 @@ function helper.show()
 end
 
 local lastw, lasth = 0, 0
-function helper.resize()
+function helper.resize ()
 	local w, h = helper.Frame:GetSize()
 
 	local changew, changeh = w - lastw, h - lasth
