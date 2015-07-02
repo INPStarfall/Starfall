@@ -14,7 +14,7 @@ local function createCoroutine ( func )
 	-- Can't use coroutine.create, because of a bug that prevents halting the program when it exceeds quota
 
 	-- Hack to get the coroutine from a wrapped function. Necessary because coroutine.create is not available
-	local wrappedFunc = coroutine.wrap( function() return func( coroutine.yield( coroutine.running() ) ) end ) 
+	local wrappedFunc = coroutine.wrap( function () return func( coroutine.yield( coroutine.running() ) ) end )
 	
 	local thread = wrappedFunc()
 
