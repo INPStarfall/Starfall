@@ -24,34 +24,34 @@ end
 
 --- Creates and registers a local library. The library must be added to the context's
 -- local libraries field.
-function SF.Libraries.RegisterLocal(name)
-	local methods, metamethods = SF.Typedef("Library: "..name)
-	SF.Libraries.Local[name] = metamethods
+function SF.Libraries.RegisterLocal ( name )
+	local methods, metamethods = SF.Typedef( "Library: " .. name )
+	SF.Libraries.Local[ name ] = metamethods
 	return methods, metamethods
 end
 
 --- Gets a global library by name
 -- @param name The name of the library
 -- @return A metatable proxy of the library
-function SF.Libraries.Get(name)
-	return SF.Libraries.libraries[name] and setmetatable({},SF.Libraries.libraries[name])
+function SF.Libraries.Get ( name )
+	return SF.Libraries.libraries[ name ] and setmetatable( {}, SF.Libraries.libraries[ name ] )
 end
 
 --- Gets a local library by name
 -- @param name The name of the library
 -- @return The library (not a metatable proxy!)
-function SF.Libraries.GetLocal(name)
-	return SF.Libraries.Local[name]
+function SF.Libraries.GetLocal ( name )
+	return SF.Libraries.Local[ name ]
 end
 
 --- Creates a table for use in SF.CreateContext containing all of the
 -- local libraries in arr.
 -- @param arr Array of local libraries to load
-function SF.Libraries.CreateLocalTbl(arr)
+function SF.Libraries.CreateLocalTbl ( arr )
 	local tbl = {}
-	for i=1,#arr do
-		local lib = arr[i]
-		tbl[lib] = SF.Libraries.Local[lib] or SF.throw( string.format( "Requested nonexistant library '%s'", lib ), 2 )
+	for i = 1, #arr do
+		local lib = arr[ i ]
+		tbl[ lib ] = SF.Libraries.Local[ lib ] or SF.throw( string.format( "Requested nonexistant library '%s'", lib ), 2 )
 	end
 	return tbl
 end
@@ -60,24 +60,24 @@ end
 -- and are called by Libraries.CallHook.
 -- @param hookname The name of the hook.
 -- @param func The function to call
-function SF.Libraries.AddHook(hookname, func)
-	local hook = SF.Libraries.hooks[hookname]
+function SF.Libraries.AddHook ( hookname, func )
+	local hook = SF.Libraries.hooks[ hookname ]
 	if not hook then
 		hook = {}
-		SF.Libraries.hooks[hookname] = hook
+		SF.Libraries.hooks[ hookname ] = hook
 	end
 	
-	hook[#hook+1] = func
+	hook[ #hook + 1 ] = func
 end
 
 --- Calls a library hook.
 -- @param hookname The name of the hook.
 -- @param ... The arguments to the functions that are called.
-function SF.Libraries.CallHook(hookname, ...)
-	local hook = SF.Libraries.hooks[hookname]
+function SF.Libraries.CallHook ( hookname, ... )
+	local hook = SF.Libraries.hooks[ hookname ]
 	if not hook then return end
 	
-	for i=1,#hook do
-		hook[i](...)
+	for i = 1, #hook do
+		hook[ i ]( ... )
 	end
 end
