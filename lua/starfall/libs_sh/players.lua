@@ -20,10 +20,16 @@ local function wrap( object )
 	return object
 end
 
+local unwrap = SF.Entities.Unwrap
+
 SF.AddObjectWrapper( debug.getregistry().Player, player_metamethods, wrap )
 
 -- unwrapper
-SF.AddObjectUnwrapper( player_metamethods, SF.Entities.Unwrap )
+SF.AddObjectUnwrapper( player_metamethods, unwrap )
+
+--- Adding the wrap / unwrap functions to the SF.Vehicles table
+SF.Players.Wrap = wrap
+SF.Players.Unwrap = unwrap
 
 --- To string
 -- @shared
