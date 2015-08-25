@@ -659,6 +659,19 @@ if CLIENT then
 			end
 			tabs.selectedTab = SF.Editor.getTabHolder():getTabIndex( SF.Editor.getActiveTab() )
 			file.Write( "sf_tabs.txt", util.TableToJSON( tabs ) )
+
+			local activeWep = LocalPlayer():GetActiveWeapon()
+			if IsValid( activeWep ) and activeWep:GetClass() == "gmod_tool" and activeWep.Mode == "starfall_processor" then
+				local model = nil
+				local ppdata = {}
+				SF.Preprocessor.ParseDirectives( "file", SF.Editor.getCode(), {}, ppdata )
+				if ppdata.models and ppdata.models.file ~= "" then
+					model = ppdata.models.file 
+				end
+
+				local tool = activeWep:GetToolObject( "starfall_processor" )
+				tool.ClientConVar[ "HologramModel" ] = model
+			end 
 		end
 
 		function editor:OnThink ()
