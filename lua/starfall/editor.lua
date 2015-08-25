@@ -84,11 +84,11 @@ if CLIENT then
 	function SF.Editor.init ()
 		if not SF.Editor.safeToInit then 
 			SF.AddNotify( LocalPlayer(), "Starfall is downloading editor files, please wait.", NOTIFY_GENERIC, 5, NOTIFYSOUND_DRIP3 ) 
-			return 
+			return false
 		end
 		if SF.Editor.initialized or #aceFiles == 0 or htmlEditorCode == nil then 
 			SF.AddNotify( LocalPlayer(), "Failed to initialize Starfall editor.", NOTIFY_GENERIC, 5, NOTIFYSOUND_DRIP3 )
-			return
+			return false
 		end
 
 		if not file.Exists( "starfall", "DATA" ) then
@@ -128,7 +128,7 @@ if CLIENT then
 
 	function SF.Editor.open ()
 		if not SF.Editor.initialized then 
-			SF.Editor.init()
+			if not SF.Editor.init() then return end
 		end
 
 		SF.Editor.editor:open()
