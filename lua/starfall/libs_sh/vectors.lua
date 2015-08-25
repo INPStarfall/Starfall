@@ -20,7 +20,7 @@ function vec_metamethods.__newindex ( t, k, v )
 		if k >= 1 and k <= 3 then
 			SF.UnwrapObject( t ).__newindex( SF.UnwrapObject( t ), k, v )
 		end
-	elseif k == "x" or k =="y" or k == "z" then
+	elseif k == "x" or k == "y" or k == "z" then
 		SF.UnwrapObject( t ).__newindex( SF.UnwrapObject( t ), k, v )
 	else
 		rawset( t, k, v )
@@ -35,7 +35,7 @@ function vec_metamethods.__index ( t, k )
 			return unwrap( t )[ k ]
 		end
 	else
-		if k == "x" or k =="y" or k == "z" then
+		if k == "x" or k == "y" or k == "z" then
 			return unwrap( t )[ k ]
 		end
 	end

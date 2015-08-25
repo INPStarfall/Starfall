@@ -1,9 +1,9 @@
-AddCSLuaFile('cl_init.lua')
-AddCSLuaFile('shared.lua')
-include('shared.lua')
+AddCSLuaFile( "cl_init.lua" )
+AddCSLuaFile( "shared.lua" )
+include( "shared.lua" )
 
-include("starfall/SFLib.lua")
-assert(SF, "Starfall didn't load correctly!")
+include( "starfall/SFLib.lua" )
+assert( SF, "Starfall didn't load correctly!" )
 
 local context = SF.CreateContext()
 local screens = {}
@@ -43,34 +43,34 @@ end
 
 local requests = {}
 
-local function sendCodeRequest(ply, screenid)
-	local screen = Entity(screenid)
+local function sendCodeRequest ( ply, screenid )
+	local screen = Entity( screenid )
 
 	if not screen.mainfile then
-		if not requests[screenid] then requests[screenid] = {} end
-		if requests[screenid][player] then return end
-		requests[screenid][ply] = true
+		if not requests[ screenid ] then requests[ screenid ] = {} end
+		if requests[ screenid ][ player ] then return end
+		requests[ screenid ][ ply ] = true
 		return
 
 	elseif screen.mainfile then
-		if requests[screenid] then
-			requests[screenid][ply] = nil
+		if requests[ screenid ] then
+			requests[ screenid ][ ply ] = nil
 		end
-		sendScreenCode(screen, screen.owner, screen.files, screen.mainfile, ply)
+		sendScreenCode( screen, screen.owner, screen.files, screen.mainfile, ply )
 	end
 end
 
-local function retryCodeRequests()
-	for screenid,plys in pairs(requests) do
-		for ply,_ in pairs(requests[screenid]) do
-			sendCodeRequest(ply, screenid)
+local function retryCodeRequests ()
+	for screenid,plys in pairs( requests ) do
+		for ply,_ in pairs( requests[ screenid ] ) do
+			sendCodeRequest( ply, screenid )
 		end
 	end
 end
 
-net.Receive("starfall_screen_download", function(len, ply)
+net.Receive("starfall_screen_download", function( len, ply )
 	local screen = net.ReadEntity()
-	sendCodeRequest(ply, screen:EntIndex())
+	sendCodeRequest( ply, screen:EntIndex() )
 end)
 
 function ENT:Initialize ()
@@ -82,35 +82,35 @@ function ENT:Error ( msg, traceback )
     self.BaseClass.Error( self, msg, traceback )
 end
 
-function ENT:CodeSent(ply, files, mainfile)
+function ENT:CodeSent (ply, files, mainfile)
 	if ply ~= self.owner then return end
 	local update = self.mainfile ~= nil
 
 	self.files = files
 	self.mainfile = mainfile
-	screens[self] = self
+	screens[ self ] = self
 
 	if update then
-		net.Start("starfall_screen_update")
-			net.WriteEntity(self)
-			for k,v in pairs(files) do
-				net.WriteBit(false)
-				net.WriteString(k)
-				net.WriteString(util.CRC(v))
+		net.Start( "starfall_screen_update" )
+			net.WriteEntity( self )
+			for k,v in pairs( files ) do
+				net.WriteBit( false )
+				net.WriteString( k )
+				net.WriteString( util.CRC( v ) )
 			end
-			net.WriteBit(true)
+			net.WriteBit( true )
 		net.Broadcast()
-		--sendScreenCode(self, ply, files, mainfile)
+		--sendScreenCode( self, ply, files, mainfile )
 	end
 
 	local ppdata = {}
-	SF.Preprocessor.ParseDirectives(mainfile, files[mainfile], {}, ppdata)
+	SF.Preprocessor.ParseDirectives( mainfile, files[ mainfile ], {}, ppdata )
 	
 	if ppdata.sharedscreen then		
 		local ok, instance = SF.Compiler.Compile( files, context, mainfile, ply, { entity = self } )
 		if not ok then self:Error(instance) return end
 		
-		instance.runOnError = function(inst,...) self:Error(...) end
+		instance.runOnError = function ( inst, ... ) self:Error( ... ) end
 
 		if self.instance then
 			self.instance:deinitialize()
@@ -127,35 +127,34 @@ function ENT:CodeSent(ply, files, mainfile)
 		
 		if not self.instance then return end
 		
-		local r,g,b,a = self:GetColor()
-		self:SetColor(Color(255, 255, 255, a))
+		local _, _, _, a = self:GetColor()
+		self:SetColor( Color( 255, 255, 255, a ) )
 		self.sharedscreen = true
 	end
 end
 
 local i = 0
-function ENT:Think()
-	self.BaseClass.Think(self)
+function ENT:Think ()
+	self.BaseClass.Think( self )
 
 	i = i + 1
-
 	if i % 22 == 0 then
 		retryCodeRequests()
 		i = 0
 	end
 
-	self:NextThink(CurTime())
+	self:NextThink( CurTime() )
 	
 	if self.instance and not self.instance.error then
 		self.instance:updateCPUBuffer()
-		self:runScriptHook("think")
+		self:runScriptHook( "think" )
 	end
 	
 	return true
 end
 
 -- Sends a net message to all clients about the use.
-function ENT:Use( activator )
+function ENT:Use ( activator )
 	if activator:IsPlayer() then
 		net.Start( "starfall_screen_used" )
 			net.WriteEntity( self )
@@ -167,7 +166,7 @@ function ENT:Use( activator )
 	end
 end
 
-function ENT:OnRemove()
+function ENT:OnRemove ()
     self.BaseClass.OnRemove( self )
     screens[ self ] = nil
 end

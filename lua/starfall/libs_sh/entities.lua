@@ -270,7 +270,7 @@ end
 -- @shared
 -- @param data Local space vector
 -- @return data as world space vector
-function ents_methods:localToWorld( data )
+function ents_methods:localToWorld ( data )
 	SF.CheckType( self, ents_metamethods )
 	SF.CheckType( data, SF.Types[ "Vector" ] )
 	local ent = unwrap( self )

@@ -59,9 +59,9 @@ SF.DefaultEnvironment.pairs = pairs
 -- @class function
 -- @param obj Object to get type of
 -- @return The name of the object's type.
-SF.DefaultEnvironment.type = function( obj )
+SF.DefaultEnvironment.type = function ( obj )
 	local tp = getmetatable( obj )
-	return type(tp) == "string" and tp or type( obj )
+	return type( tp ) == "string" and tp or type( obj )
 end
 --- Same as Lua's next
 -- @name SF.DefaultEnvironment.next
@@ -95,9 +95,9 @@ SF.DefaultEnvironment.setmetatable = setmetatable
 --- Same as Lua's getmetatable. Doesn't work on most internal metatables
 -- @param tbl Table to get metatable of
 -- @return The metatable of tbl
-SF.DefaultEnvironment.getmetatable = function(tbl)
-	SF.CheckType(tbl,"table")
-	return getmetatable(tbl)
+SF.DefaultEnvironment.getmetatable = function( tbl )
+	SF.CheckType( tbl, "table" )
+	return getmetatable( tbl )
 end
 
 --- Constant that denotes whether the code is executed on the client
@@ -134,14 +134,14 @@ end
 -- as requested by Divran
 
 -- Filters Gmod Lua files based on Garry's naming convention.
-local function filterGmodLua(lib, original, gm)
+local function filterGmodLua ( lib, original, gm )
 	original = original or {}
 	gm = gm or {}
-	for name, func in pairs(lib) do
-		if name:match("^[A-Z]") then
-			gm[name] = func
+	for name, func in pairs( lib ) do
+		if name:match( "^[A-Z]" ) then
+			gm[ name ] = func
 		else
-			original[name] = func
+			original[ name ] = func
 		end
 	end
 	return original, gm
@@ -152,48 +152,51 @@ local string_methods, string_metatable = SF.Typedef( "Library: string" )
 filterGmodLua( string, string_methods )
 string_metatable.__newindex = function () end
 
---- Lua's (not glua's) string library
+--- Lua's (not GLua's) string library
 -- @name SF.DefaultEnvironment.string
 -- @class table
 SF.DefaultEnvironment.string = setmetatable( {}, string_metatable )
 
 -- Math library
-local math_methods, math_metatable = SF.Typedef("Library: math")
-filterGmodLua(math,math_methods)
-math_metatable.__newindex = function() end
+local math_methods, math_metatable = SF.Typedef( "Library: math" )
+filterGmodLua( math, math_methods )
+math_metatable.__newindex = function () end
 math_methods.clamp = math.Clamp
 math_methods.round = math.Round
 math_methods.randfloat = math.Rand
 math_methods.calcBSplineN = nil
---- Lua's (not glua's) math library, plus clamp, round, and randfloat
+
+--- Lua's ( not GLua's ) math library, plus clamp, round, and randfloat
 -- @name SF.DefaultEnvironment.math
 -- @class table
-SF.DefaultEnvironment.math = setmetatable({},math_metatable)
+SF.DefaultEnvironment.math = setmetatable( {}, math_metatable )
 
 local os_methods, os_metatable = SF.Typedef( "Library: os" )
 filterGmodLua( os, os_methods )
 os_metatable.__newindex = function () end
+
 --- GLua's os library. http://wiki.garrysmod.com/page/Category:os
 -- @name SF.DefaultEnvironment.os
 -- @class table
 SF.DefaultEnvironment.os = setmetatable( {}, os_metatable )
 
-local table_methods, table_metatable = SF.Typedef("Library: table")
-filterGmodLua(table,table_methods)
-table_metatable.__newindex = function() end
---- Lua's (not glua's) table library
+local table_methods, table_metatable = SF.Typedef( "Library: table" )
+filterGmodLua( table,table_methods )
+table_metatable.__newindex = function () end
+
+--- Lua's (not GLua's) table library
 -- @name SF.DefaultEnvironment.table
 -- @class table
-SF.DefaultEnvironment.table = setmetatable({},table_metatable)
+SF.DefaultEnvironment.table = setmetatable( {}, table_metatable )
 
 -- ------------------------- Functions ------------------------- --
 
 --- Gets a list of all libraries
 -- @return Table containing the names of each available library
-function SF.DefaultEnvironment.getLibraries()
+function SF.DefaultEnvironment.getLibraries ()
 	local ret = {}
 	for k,v in pairs( SF.Libraries.libraries ) do
-		ret[#ret+1] = k
+		ret[ #ret + 1 ] = k
 	end
 	return ret
 end
@@ -204,20 +207,20 @@ if SERVER then
 	--- Prints a message to the player's chat.
 	-- @shared
 	-- @param ... Values to print
-	function SF.DefaultEnvironment.print(...)
+	function SF.DefaultEnvironment.print ( ... )
 		local str = ""
-		local tbl = {...}
-		for i=1,#tbl do str = str .. tostring(tbl[i]) .. (i == #tbl and "" or "\t") end
-		SF.instance.player:ChatPrint(str)
+		local tbl = { ... }
+		for i = 1, #tbl do str = str .. tostring( tbl[ i ] ) .. ( i == #tbl and "" or "\t" ) end
+		SF.instance.player:ChatPrint( str )
 	end
 else
 	-- Prints a message to the player's chat.
-	function SF.DefaultEnvironment.print(...)
+	function SF.DefaultEnvironment.print ( ... )
 		if SF.instance.player ~= LocalPlayer() then return end
 		local str = ""
-		local tbl = {...}
-		for i=1,#tbl do str = str .. tostring(tbl[i]) .. (i == #tbl and "" or "\t") end
-		LocalPlayer():ChatPrint(str)
+		local tbl = { ... }
+		for i = 1 , #tbl do str = str .. tostring( tbl[ i ] ) .. ( i == #tbl and "" or "\t" ) end
+		LocalPlayer():ChatPrint( str )
 	end
 end
 
@@ -247,21 +250,21 @@ end
 -- Works pretty much like standard Lua require()
 -- @param file The file to include. Make sure to --@include it
 -- @return Return value of the script
-function SF.DefaultEnvironment.require(file)
-	SF.CheckType(file, "string")
+function SF.DefaultEnvironment.require (file)
+	SF.CheckType( file, "string" )
 	local loaded = SF.instance.data.reqloaded
 	if not loaded then
 		loaded = {}
 		SF.instance.data.reqloaded = loaded
 	end
 	
-	if loaded[file] then
-		return loaded[file]
+	if loaded[ file ] then
+		return loaded[ file ]
 	else
-		local func = SF.instance.scripts[file]
-		if not func then SF.throw( "Can't find file '" .. file .. "' (did you forget to --@include it?)", 2 ) end
-		loaded[file] = func() or true
-		return loaded[file]
+		local func = SF.instance.scripts[ file ]
+		if not func then SF.throw( "Can't find file '" .. file .. "' ( Did you forget to --@include it? )", 2 ) end
+		loaded[ file ] = func() or true
+		return loaded[ file ]
 	end
 end
 
@@ -269,10 +272,10 @@ end
 -- Pretty much like standard Lua dofile()
 -- @param file The file to include. Make sure to --@include it
 -- @return Return value of the script
-function SF.DefaultEnvironment.dofile(file)
-	SF.CheckType(file, "string")
-	local func = SF.instance.scripts[file]
-	if not func then SF.throw( "Can't find file '" .. file .. "' (did you forget to --@include it?)", 2 ) end
+function SF.DefaultEnvironment.dofile ( file )
+	SF.CheckType( file, "string" )
+	local func = SF.instance.scripts[ file ]
+	if not func then SF.throw( "Can't find file '" .. file .. "' ( Did you forget to --@include it? )", 2 ) end
 	return func()
 end
 
@@ -363,20 +366,20 @@ end
 -- Restricts access to builtin type's metatables
 
 local _R = debug.getregistry()
-local function restrict(instance, hook, name, ok, err)
+local function restrict( instance, hook, name, ok, err )
 	_R.Vector.__metatable = "Vector"
 	_R.Angle.__metatable = "Angle"
 	_R.VMatrix.__metatable = "VMatrix"
 end
 
-local function unrestrict(instance, hook, name, ok, err)
+local function unrestrict( instance, hook, name, ok, err )
 	_R.Vector.__metatable = nil
 	_R.Angle.__metatable = nil
 	_R.VMatrix.__metatable = nil
 end
 
-SF.Libraries.AddHook("prepare", restrict)
-SF.Libraries.AddHook("cleanup", unrestrict)
+SF.Libraries.AddHook( "prepare", restrict )
+SF.Libraries.AddHook( "cleanup", unrestrict )
 
 -- ------------------------- Hook Documentation ------------------------- --
 

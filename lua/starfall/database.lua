@@ -12,8 +12,8 @@ function SF.DB.escape ( str )
 end
 
 local function queryMultiple ( statements )
-	local ret = nil
-	for k,v in pairs( statements ) do
+	local ret
+	for _, v in pairs( statements ) do
 		ret = sql.Query( v )
 		if ret == false then break end
 	end

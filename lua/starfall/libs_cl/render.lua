@@ -18,7 +18,7 @@
 -- @field TEXT_ALIGN_TOP
 -- @field TEXT_ALIGN_BOTTOM
 
-local render_library, _ = SF.Libraries.RegisterLocal("render")
+local render_library, _ = SF.Libraries.RegisterLocal( "render" )
 
 render_library.TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
 render_library.TEXT_ALIGN_CENTER = TEXT_ALIGN_CENTER
@@ -53,14 +53,14 @@ local globalRTcount = 0
 
 SF.Libraries.AddHook( "prepare", function ( instance )
 	if hook == "render" then
-		currentcolor = Color(0,0,0,0)
+		currentcolor = Color( 0, 0, 0, 0 )
 	end
 end )
 
 SF.Libraries.AddHook( "cleanup", function ( instance )
-	for i=#matrix_stack,1,-1 do
+	for i = #matrix_stack, 1, -1 do
 		cam.PopModelMatrix()
-		matrix_stack[i] = nil
+		matrix_stack[ i ] = nil
 	end
 end )
 
@@ -122,9 +122,9 @@ local validfonts = {
 	[ "DejaVu Sans Mono" ] = true
 }
 
-surface.CreateFont("sf_screen_font_Default_16_400_9_0000", {size = 16, weight = 400,
+surface.CreateFont( "sf_screen_font_Default_16_400_9_0000", { size = 16, weight = 400,
 		antialias=false, additive = false, font = "Default",
-		shadow = false, outline = false, blur = 0})
+		shadow = false, outline = false, blur = 0 } )
 
 local defined_fonts = {
 	["sf_screen_font_Default_16_400_9_0000"] = true
@@ -132,69 +132,69 @@ local defined_fonts = {
 
 local defaultFont = "sf_screen_font_Default_16_400_9_0000"
 
-local poly_methods, poly_metamethods = SF.Typedef("Polygon")
-local wrappoly, unwrappoly = SF.CreateWrapper(poly_metamethods)
+local poly_methods, poly_metamethods = SF.Typedef( "Polygon" )
+local wrappoly, unwrappoly = SF.CreateWrapper( poly_metamethods )
 
-local function checkvertex(vert)
+local function checkvertex ( vert )
 	return {
-		x = SF.CheckType(vert.x or vert[1],"number",1),
-		y = SF.CheckType(vert.y or vert[2],"number",1),
-		u = tonumber(vert.u or vert[3]) or 0,
-		v = tonumber(vert.v or vert[4]) or 0,
+		x = SF.CheckType( vert.x or vert[ 1 ], "number", 1 ),
+		y = SF.CheckType( vert.y or vert[ 2 ], "number", 1 ),
+		u = tonumber( vert.u or vert[ 3 ] ) or 0,
+		v = tonumber( vert.v or vert[ 4 ] ) or 0,
 	}
 end
 
-function poly_metamethods:__index(k)
-	SF.CheckType(self,poly_metamethods)
-	SF.CheckType(k,"number")
-	local poly = unwrappoly(self)
+function poly_metamethods:__index ( k )
+	SF.CheckType( self, poly_metamethods )
+	SF.CheckType( k, "number" )
+	local poly = unwrappoly( self )
 	if not poly then return nil end
 	if k <= 0 or k > #poly then return nil end
-	return table.Copy(poly[k])
+	return table.Copy( poly[ k ] )
 end
 
-function poly_metamethods:__len()
-	SF.CheckType(self,poly_metamethods)
-	local poly = unwrappoly(self)
+function poly_metamethods:__len ()
+	SF.CheckType( self, poly_metamethods )
+	local poly = unwrappoly( self )
 	return poly and #poly or nil
 end
 
-function poly_metamethods:__newindex(k,v)
-	SF.CheckType(self,poly_metamethods)
-	SF.CheckType(k,"number")
-	SF.CheckType(v,"table")
-	local poly = unwrappoly(self)
+function poly_metamethods:__newindex ( k, v )
+	SF.CheckType( self,poly_metamethods )
+	SF.CheckType( k,"number" )
+	SF.CheckType( v,"table" )
+	local poly = unwrappoly( self )
 	if not poly then return end
-	if k <= 0 or k > (#poly)+1 then return SF.throw( "poly index out of bounds: " .. k .. " out of " .. #poly, 2 ) end
-	poly[k] = checkvertex(v)
+	if k <= 0 or k > ( #poly ) + 1 then return SF.throw( "poly index out of bounds: " .. k .. " out of " .. #poly, 2 ) end
+	poly[ k ] = checkvertex( v )
 end
 
 -- ------------------------------------------------------------------ --
 
 --- Pushes a matrix onto the matrix stack.
 -- @param m The matrix
-function render_library.pushMatrix(m)
-	SF.CheckType(m,matrix_meta)
+function render_library.pushMatrix ( m )
+	SF.CheckType( m, matrix_meta )
 	local renderdata = SF.instance.data.render
 	if not renderdata.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
 	local id = #matrix_stack
 	if id + 1 > MATRIX_STACK_LIMIT then SF.throw( "Pushed too many matricies", 2 ) end
 	local newmatrix
-	if matrix_stack[id] then
-		newmatrix = matrix_stack[id] * v_unwrap(m)
+	if matrix_stack[ id ] then
+		newmatrix = matrix_stack[ id ] * v_unwrap( m )
 	else
-		newmatrix = v_unwrap(m)
+		newmatrix = v_unwrap( m )
 	end
-	matrix_stack[id+1] = newmatrix
-	cam.PushModelMatrix(newmatrix)
+	matrix_stack[ id + 1 ] = newmatrix
+	cam.PushModelMatrix( newmatrix )
 end
 
 --- Pops a matrix from the matrix stack.
-function render_library.popMatrix()
+function render_library.popMatrix ( )
 	local renderdata = SF.instance.data.render
 	if not renderdata.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
 	if #matrix_stack <= 0 then SF.throw( "Popped too many matricies", 2 ) end
-	matrix_stack[#matrix_stack] = nil
+	matrix_stack[ #matrix_stack ] = nil
 	cam.PopModelMatrix()
 end
 
@@ -414,29 +414,29 @@ end
 -- \- HL2MPTypeDeath
 -- \- BudgetLabel
 -- \- DejaVu Sans Mono (shipped, monospaced)
-function render_library.createFont(font,size,weight,antialias,additive,shadow,outline,blur)
-	if not validfonts[font] then SF.throw( "invalid font", 2 ) end
+function render_library.createFont ( font, size, weight, antialias, additive, shadow, outline, blur )
+	if not validfonts[ font ] then SF.throw( "invalid font", 2 ) end
 	
-	size = tonumber(size) or 16
-	weight = tonumber(weight) or 400
-	blur = tonumber(blur) or 0
+	size = tonumber( size ) or 16
+	weight = tonumber( weight ) or 400
+	blur = tonumber( blur ) or 0
 	antialias = antialias and true or false
 	additive = additive and true or false
 	shadow = shadow and true or false
 	outline = outline and true or false
 	
-	local name = string.format("sf_screen_font_%s_%d_%d_%d_%d%d%d%d",
+	local name = string.format( "sf_screen_font_%s_%d_%d_%d_%d%d%d%d",
 		font, size, weight, blur,
 		antialias and 1 or 0,
 		additive and 1 or 0,
 		shadow and 1 or 0,
-		outline and 1 or 0)
+		outline and 1 or 0 )
 	
-	if not defined_fonts[name] then
-		surface.CreateFont(name, {size = size, weight = weight,
-			antialias=antialias, additive = additive, font = font,
-			shadow = shadow, outline = outline, blur = blur})
-		defined_fonts[name] = true
+	if not defined_fonts[ name ] then
+		surface.CreateFont( name, { size = size, weight = weight,
+			antialias = antialias, additive = additive, font = font,
+			shadow = shadow, outline = outline, blur = blur } )
+		defined_fonts[ name ] = true
 	end
 	return name
 end
@@ -445,24 +445,24 @@ end
 -- @param text Text to get the size of
 -- @return width of the text
 -- @return height of the text
-function render_library.getTextSize( text )
-	SF.CheckType(text,"string")
+function render_library.getTextSize ( text )
+	SF.CheckType( text, "string" )
 	
-	surface.SetFont(SF.instance.data.render.font or defaultFont)
+	surface.SetFont( SF.instance.data.render.font or defaultFont )
 	return surface.GetTextSize( text )
 end
 
 --- Sets the font
 -- @param font The font to use
-function render_library.setFont(font)
-	if not defined_fonts[font] then SF.throw( "Font does not exist.", 2 ) end
+function render_library.setFont ( font )
+	if not defined_fonts[ font ] then SF.throw( "Font does not exist.", 2 ) end
 	SF.instance.data.render.font = font
-	--surface.SetFont(font)
+	--surface.SetFont( font )
 end
 
 --- Gets the default font
 -- @return Default font
-function render_library.getDefaultFont()
+function render_library.getDefaultFont ()
 	return defaultFont
 end
 
@@ -491,14 +491,14 @@ end
 -- a new vertex at 1 <= i <= #poly+1. And the length of the poly can be taken.
 -- @param verts Array of verticies to convert.
 -- @return compiled polygon
-function render_library.createPoly(verts)
-	SF.CheckType(verts,"table")
-	local poly = {}
-	local wrappedpoly = wrappoly(poly)
-	for i=1,#verts do
-		local v = verts[i]
-		SF.CheckType(v,"table")
-		poly[i] = checkvertex(v)
+function render_library.createPoly ( verts )
+	SF.CheckType( verts, "table" )
+	local poly = { }
+	local wrappedpoly = wrappoly( poly )
+	for i = 1, #verts do
+		local v = verts[ i ]
+		SF.CheckType( v, "table" )
+		poly[ i ] = checkvertex( v )
 	end
 	return wrappedpoly
 end
@@ -507,20 +507,20 @@ end
 -- Note that if you do use an uncompiled poly, you will use up ops
 -- very quickly!
 -- @param poly Compiled poly or array of vertexes
-function render_library.drawPoly(poly)
-	if dgetmeta(poly) ~= poly_metamethods then
-		SF.CheckType(poly,"table")
+function render_library.drawPoly ( poly )
+	if dgetmeta( poly ) ~= poly_metamethods then
+		SF.CheckType( poly, "table" )
 		local verts = poly
 		poly = {}
-		for i=1,#verts do
-			local v = verts[i]
-			SF.CheckType(v,"table")
-			poly[i] = checkvertex(v)
+		for i = 1, #verts do
+			local v = verts[ i ]
+			SF.CheckType( v, "table" )
+			poly[ i ] = checkvertex( v )
 		end
 	else
-		poly = unwrappoly(poly)
+		poly = unwrappoly( poly )
 	end
-	surface.DrawPoly(poly)
+	surface.DrawPoly( poly )
 end
 
 --- Gets a 2D cursor position where ply is aiming.
@@ -549,16 +549,16 @@ function render_library.cursorPos( ply )
 	local Start = ply:GetShootPos()
 	local Dir = ply:GetAimVector()
 	
-	local A = Normal:Dot(Dir)
+	local A = Normal:Dot( Dir )
 	
 	-- If ray is parallel or behind the screen
 	if A == 0 or A > 0 then return nil end
 	
-	local B = Normal:Dot(Pos-Start) / A
-		if (B >= 0) then
+	local B = Normal:Dot( Pos - Start ) / A
+		if ( B >= 0 ) then
 		local HitPos = WorldToLocal( Start + Dir * B, Angle(), Pos, Ang )
-		local x = (0.5+HitPos.x/(monitor.RS*512/monitor.RatioX)) * 512
-		local y = (0.5-HitPos.y/(monitor.RS*512)) * 512	
+		local x = ( 0.5 + HitPos.x / ( monitor.RS * 512 / monitor.RatioX ) ) * 512
+		local y = ( 0.5 - HitPos.y / ( monitor.RS * 512 ) ) * 512
 		if x < 0 or x > 512 or y < 0 or y > 512 then return nil end -- Aiming off the screen 
 		return x, y
 	end
@@ -569,7 +569,7 @@ end
 --- Returns information about the screen, such as dimentions and rotation.
 -- Note: this does a table copy so move it out of your draw hook
 -- @return A table describing the screen.
-function render_library.getScreenInfo()
+function render_library.getScreenInfo ()
 	local gpu = SF.instance.data.render.gpu
 	if not gpu then return end
 	local info, _, _ = gpu:GetInfo()
@@ -629,6 +629,7 @@ function render_library.selectRenderTarget ( name )
 	local data = SF.instance.data.render
 	data.oldRT = data.oldRT or render.GetRenderTarget()
 	if not data.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
+
 	if not name then
 		if data.usingRT then
 			cam.End2D()
@@ -638,6 +639,7 @@ function render_library.selectRenderTarget ( name )
 		end
 		return
 	end
+
 	SF.CheckType( name, "string" )
 	local rt = globalRTs[ data.rendertargets[ name ] ][ 1 ]
 	if not rt then SF.Throw( "Invalid Rendertarget", 2 ) end
@@ -657,6 +659,7 @@ end
 function render_library.setRenderTargetTexture ( name )
 	local data = SF.instance.data.render
 	if not data.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
+
 	if not name then
 		draw.NoTexture()
 	else
@@ -677,9 +680,8 @@ end
 --- Dumps the current render target and allows the pixels to be accessed by render.readPixel.
 function render_library.capturePixels ()
 	local data = SF.instance.data.render
-	if not data.isRendering then
-		SF.throw( "Not in rendering hook.", 2 )
-	end
+	if not data.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
+
 	render.CapturePixels()
 end
 
@@ -689,9 +691,7 @@ end
 -- @return Color object with ( r, g, b, 255 ) from the specified pixel.
 function render_library.readPixel ( x, y )
 	local data = SF.instance.data.render
-	if not data.isRendering then
-		SF.throw( "Not in rendering hook.", 2 )
-	end
+	if not data.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
 	
 	SF.CheckType( x, "number" )
 	SF.CheckType( y, "number" )
