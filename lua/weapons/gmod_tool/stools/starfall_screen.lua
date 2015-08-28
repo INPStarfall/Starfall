@@ -149,7 +149,48 @@ end
 
 if CLIENT then
 	local lastclick = CurTime()
+
+	local function get_active_tool ( ply, tool )
+		-- find toolgun
+		local activeWep = ply:GetActiveWeapon()
+		if not IsValid( activeWep ) or activeWep:GetClass() ~= "gmod_tool" or activeWep.Mode ~= tool then return end
+
+		return activeWep:GetToolObject( tool )
+	end
 	
+	local modelHologram = nil
+
+	hook.Add( "Think", "SF_Update_modelHologram_Screen", function () 
+		if modelHologram == nil or not modelHologram:IsValid() then
+			modelHologram = ents.CreateClientProp()
+			modelHologram:SetRenderMode( RENDERMODE_TRANSALPHA )
+			modelHologram:SetColor( Color( 255, 255, 255, 170 ) )
+			modelHologram:Spawn()
+		end
+
+		local tool = get_active_tool( LocalPlayer(), "starfall_screen" )
+		if tool then
+			local model = tool:GetClientInfo( "Model" )
+			if model and model ~= "" and modelHologram:GetModel() ~= model then
+				modelHologram:SetModel( model )
+			end
+
+			local min = modelHologram:OBBMins()
+			local trace = LocalPlayer():GetEyeTrace()
+
+			if trace.Hit and not ( IsValid( trace.Entity ) and ( trace.Entity:IsPlayer() or trace.Entity:GetClass() == "starfall_screen" ) ) then
+				modelHologram:SetPos( trace.HitPos - trace.HitNormal * min.z )
+				modelHologram:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+				modelHologram:SetNoDraw( false )
+			else
+				modelHologram:SetNoDraw( true )
+			end
+		else
+			modelHologram:SetNoDraw( true )
+		end
+
+	end )
+
 	local function GotoDocs ( button )
 		gui.OpenURL( "http://sf.inp.io" ) -- old one: http://colonelthirtytwo.net/sfdoc/
 	end

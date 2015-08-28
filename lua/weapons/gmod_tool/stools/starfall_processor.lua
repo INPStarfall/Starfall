@@ -15,7 +15,7 @@ cleanup.Register( "starfall_processor" )
 if SERVER then
 	CreateConVar( "sbox_maxstarfall_processor", 10, { FCVAR_REPLICATED, FCVAR_NOTIFY, FCVAR_ARCHIVE } )
 	
-	function MakeSF ( pl, Pos, Ang, model)
+	function MakeSF ( pl, Pos, Ang, model )
 		if not pl:CheckLimit( "starfall_processor" ) then return false end
 
 		local sf = ents.Create( "starfall_processor" )
@@ -67,24 +67,31 @@ function TOOL:LeftClick ( trace )
 	local Ang = trace.HitNormal:Angle()
 	Ang.pitch = Ang.pitch + 90
 
-	local sf = MakeSF( ply, trace.HitPos, Ang, model )
-
-	local min = sf:OBBMins()
-	sf:SetPos( trace.HitPos - trace.HitNormal * min.z )
-
-	local const = WireLib.Weld( sf, trace.Entity, trace.PhysicsBone, true )
-
-	undo.Create( "Starfall Processor" )
-		undo.AddEntity( sf )
-		undo.AddEntity( const )
-		undo.SetPlayer( ply )
-	undo.Finish()
-
-	ply:AddCleanup( "starfall_processor", sf )
-	
 	if not SF.RequestCode( ply, function ( mainfile, files )
 		if not mainfile then return end
-		if not IsValid( sf ) then return end -- Probably removed during transfer
+
+		local ppdata = {}
+
+		SF.Preprocessor.ParseDirectives( mainfile, files[ mainfile ], {}, ppdata )
+		if ppdata.models and ppdata.models[ mainfile ] and ppdata.models[ mainfile ] ~= "" then
+			model = ppdata.models[ mainfile ]
+		end
+
+		local sf = MakeSF( ply, trace.HitPos, Ang, model )
+
+		local min = sf:OBBMins()
+		sf:SetPos( trace.HitPos - trace.HitNormal * min.z )
+
+		local const = WireLib.Weld( sf, trace.Entity, trace.PhysicsBone, true, true )
+
+		undo.Create( "Starfall Processor" )
+			undo.AddEntity( sf )
+			undo.AddEntity( const )
+			undo.SetPlayer( ply )
+		undo.Finish()
+
+		ply:AddCleanup( "starfall_processor", sf )
+		
 		sf:Compile( files, mainfile )
 	end ) then
 		SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
@@ -107,6 +114,7 @@ function TOOL:DrawHUD () end
 function TOOL:Think () end
 
 if CLIENT then
+
 	local function get_active_tool ( ply, tool )
 		-- find toolgun
 		local activeWep = ply:GetActiveWeapon()
@@ -114,6 +122,39 @@ if CLIENT then
 
 		return activeWep:GetToolObject( tool )
 	end
+
+	local modelHologram = nil
+
+	hook.Add( "Think", "SF_Update_modelHologram_Processor", function () 
+		if modelHologram == nil or not modelHologram:IsValid() then
+			modelHologram = ents.CreateClientProp()
+			modelHologram:SetRenderMode( RENDERMODE_TRANSALPHA )
+			modelHologram:SetColor( Color( 255, 255, 255, 170 ) )
+			modelHologram:Spawn()
+		end
+
+		local tool = get_active_tool( LocalPlayer(), "starfall_processor" )
+		if tool then
+			local model = tool.ClientConVar[ "HologramModel" ] or tool:GetClientInfo( "Model" )
+			if model and model ~= "" and modelHologram:GetModel() ~= model then
+				modelHologram:SetModel( model )
+			end
+
+			local min = modelHologram:OBBMins()
+			local trace = LocalPlayer():GetEyeTrace()
+
+			if trace.Hit and not ( IsValid( trace.Entity ) and ( trace.Entity:IsPlayer() or trace.Entity:GetClass() == "starfall_processor" ) ) then
+				modelHologram:SetPos( trace.HitPos - trace.HitNormal * min.z )
+				modelHologram:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+				modelHologram:SetNoDraw( false )
+			else
+				modelHologram:SetNoDraw( true )
+			end
+		else
+			modelHologram:SetNoDraw( true )
+		end
+
+	end )
 	
 	hook.Add( "PlayerBindPress", "wire_adv", function ( ply, bind, pressed )
 		if not pressed then return end
