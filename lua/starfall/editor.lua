@@ -77,6 +77,7 @@ if CLIENT then
 	CreateClientConVar( "sf_editor_autocompletion", 1, true, false )
 	CreateClientConVar( "sf_editor_fixkeys", system.IsLinux() and 1 or 0, true, false ) --maybe osx too? need someone to check
 	CreateClientConVar( "sf_editor_fixconsolebug", 0, true, false )
+	CreateClientConVar( "sf_editor_disablequitkeybind", 0, true, false )
 
 	local aceFiles = {}
 	local htmlEditorCode = nil
@@ -391,7 +392,8 @@ if CLIENT then
 		function editor:OnKeyCodePressed ( keyCode )
 			if keyCode == KEY_S and ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) then
 				SF.Editor.saveTab( SF.Editor.getActiveTab() )
-			elseif keyCode == KEY_Q and ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) then
+			elseif keyCode == KEY_Q and ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) 
+				and GetConVarNumber( "sf_editor_disablequitkeybind" ) == 0 then
 				SF.Editor.close()
 			end
 		end
@@ -774,15 +776,16 @@ if CLIENT then
 		form:Dock( FILL )
 		form.Header:SetVisible( false )
 		form.Paint = function () end
-		setDoClick(form:CheckBox( "Show fold widgets", "sf_editor_widgets" ))
-		setDoClick(form:CheckBox( "Show line numbers", "sf_editor_linenumbers" ))
-		setDoClick(form:CheckBox( "Show gutter", "sf_editor_gutter" ))
-		setDoClick(form:CheckBox( "Show invisible characters", "sf_editor_invisiblecharacters" ))
-		setDoClick(form:CheckBox( "Show indenting guides", "sf_editor_indentguides" ))
-		setDoClick(form:CheckBox( "Highlight active line", "sf_editor_activeline" ))
-		setDoClick(form:CheckBox( "Auto completion", "sf_editor_autocompletion" ))
-		setDoClick(form:CheckBox( "Fix keys not working on Linux", "sf_editor_fixkeys" )):SetTooltip( "Some keys don't work with the editor on Linux\nEg. Enter, Tab, Backspace, Arrow keys etc..." )
-		setDoClick(form:CheckBox( "Fix console bug", "sf_editor_fixconsolebug" )):SetTooltip( "Fix console opening when pressing ' or @ (UK Keyboad layout)" )
+		setDoClick( form:CheckBox( "Show fold widgets", "sf_editor_widgets" ) )
+		setDoClick( form:CheckBox( "Show line numbers", "sf_editor_linenumbers" ) )
+		setDoClick( form:CheckBox( "Show gutter", "sf_editor_gutter" ) )
+		setDoClick( form:CheckBox( "Show invisible characters", "sf_editor_invisiblecharacters" ) )
+		setDoClick( form:CheckBox( "Show indenting guides", "sf_editor_indentguides" ) )
+		setDoClick( form:CheckBox( "Highlight active line", "sf_editor_activeline" ) )
+		setDoClick( form:CheckBox( "Auto completion", "sf_editor_autocompletion" ) )
+		setDoClick( form:CheckBox( "Fix keys not working on Linux", "sf_editor_fixkeys" ) ):SetTooltip( "Some keys don't work with the editor on Linux\nEg. Enter, Tab, Backspace, Arrow keys etc..." )
+		setDoClick( form:CheckBox( "Fix console bug", "sf_editor_fixconsolebug" ) ):SetTooltip( "Fix console opening when pressing ' or @ (UK Keyboad layout)" )
+		setDoClick( form:CheckBox( "Disable quit keybind", "sf_editor_disablequitkeybind" ) ):SetTooltip( "Ctrl-Q" )
 
 		function frame:OnOpen ()
 			SF.Editor.editor.components[ "buttonHolder" ]:getButton( "Settings" ).active = true
