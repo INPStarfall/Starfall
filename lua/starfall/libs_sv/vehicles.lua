@@ -14,8 +14,11 @@ function vehicle_methods:getDriver ()
 end
 
 --- Gets the entity that is the riding in the passenger seat of the vehicle
+-- @param n The passenger number to get.
 -- @return The passenger player of the vehicle or nil if there is no passenger
-function vehicle_methods:getPassenger ()
+function vehicle_methods:getPassenger ( n )
+	SF.CheckType( n, "number" )
+
 	local ent = unwrap( self )
-	return ent and SF.Players.Wrap( ent:GetPassenger() ) or nil
+	return ent and SF.Players.Wrap( ent:GetPassenger( n ) ) or nil
 end
