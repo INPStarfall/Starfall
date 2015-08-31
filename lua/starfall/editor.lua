@@ -98,9 +98,7 @@ if CLIENT then
 
 		SF.Editor.editor = SF.Editor.createEditor()
 		SF.Editor.fileViewer = SF.Editor.createFileViewer()
-		SF.Editor.fileViewer:close()
 		SF.Editor.settingsWindow = SF.Editor.createSettingsWindow()
-		SF.Editor.settingsWindow:close()
 
 		SF.Editor.runJS = function ( ... ) 
 			SF.Editor.editor.components.htmlPanel:QueueJavascript( ... )
@@ -385,7 +383,7 @@ if CLIENT then
 
 	function SF.Editor.createEditor ()
 		local editor = vgui.Create( "StarfallFrame" )
-		editor:SetSize( 800, 600 )
+		editor:DockPadding( 0, 0, 0, 0 )
 		editor:SetTitle( "Starfall Code Editor" )
 		editor:Center()
 
@@ -476,7 +474,10 @@ if CLIENT then
 		buttonHolder:addButton( "CloseTab", buttonCloseTab )
 
 		local html = vgui.Create( "DHTML", editor )
-		html:SetPos( 5, 54 )
+		html:Dock( FILL )
+		html:DockMargin( 5, 59, 5, 5 )
+		html:SetKeyboardInputEnabled( true )
+		html:SetMouseInputEnabled( true )
 		htmlEditorCode = htmlEditorCode:Replace( "<script>//replace//</script>", table.concat( aceFiles ) )
 		html:SetHTML( htmlEditorCode )
 
@@ -499,9 +500,6 @@ if CLIENT then
 
 		html:QueueJavascript( "createStarfallMode(\"" .. table.concat( libs, "|" ) .. "\", \"" .. table.concat( table.Add( table.Copy( functions ), libs ), "|" ) .. "\")" )
 
-		function html:PerformLayout ( ... )
-		 	self:SetSize( editor:GetWide() - 10, editor:GetTall() - 59 )
-		end
 		function html:OnKeyCodePressed ( key, notfirst )
 
 			local function repeatKey ()
@@ -662,6 +660,8 @@ if CLIENT then
 			tabs.selectedTab = SF.Editor.getTabHolder():getTabIndex( SF.Editor.getActiveTab() )
 			file.Write( "sf_tabs.txt", util.TableToJSON( tabs ) )
 
+			SF.Editor.saveSettings()
+
 			local activeWep = LocalPlayer():GetActiveWeapon()
 			if IsValid( activeWep ) and activeWep:GetClass() == "gmod_tool" and activeWep.Mode == "starfall_processor" then
 				local model = nil
@@ -674,12 +674,6 @@ if CLIENT then
 				local tool = activeWep:GetToolObject( "starfall_processor" )
 				tool.ClientConVar[ "HologramModel" ] = model
 			end 
-		end
-
-		function editor:OnThink ()
-			if self.Dragged or self.Resized then
-				SF.Editor.saveSettings()
-			end
 		end
 
 		return editor
@@ -732,18 +726,13 @@ if CLIENT then
 		end
 		buttonHolder:addButton( "Refresh", buttonRefresh )
 
-		function fileViewer:OnThink ()
-			if self.Dragged or self.Resized then
-				SF.Editor.saveSettings()
-			end
-		end
-
 		function fileViewer:OnOpen ()
 			SF.Editor.editor.components[ "buttonHolder" ]:getButton( "Files" ).active = true
 		end
 
 		function fileViewer:OnClose ()
 			SF.Editor.editor.components[ "buttonHolder" ]:getButton( "Files" ).active = false
+			SF.Editor.saveSettings()
 		end
 
 		return fileViewer
@@ -754,8 +743,6 @@ if CLIENT then
 		frame:SetSize( 200, 400 )
 		frame:SetTitle( "Starfall Settings" )
 		frame:Center()
-		frame:SetVisible( true )
-		frame:MakePopup( true )
 
 		local panel = vgui.Create( "StarfallPanel", frame )
 		panel:SetPos( 5, 40 )
@@ -766,7 +753,8 @@ if CLIENT then
 
 		local function setDoClick ( panel )
 			function panel:OnChange ()
-				SF.Editor.updateSettings()
+				SF.Editor.saveSettings()
+				timer.Simple( 0.1, function () SF.Editor.updateSettings() end )
 			end
 
 			return panel
