@@ -373,22 +373,22 @@ function wire_library.create ( entI, entO, inputname, outputname )
 	local entI = SF.Entities.Unwrap( entI )
 	local entO = SF.Entities.Unwrap( entO )
 	
-	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source" ) end
-	if not SF.Entities.IsValid( entO ) then SF.throw( "Invalid target" ) end
+	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
+	if not SF.Entities.IsValid( entO ) then SF.throw( "Invalid target", 2 ) end
 	
 	if not SF.Permissions.check( SF.instance.player, entI, "wire.createWire" ) or not SF.Permissions.check( SF.instance.player, entO, "wire.createWire" ) then SF.throw( "Insufficient permissions", 2 ) end
 	
-	if not entI.Inputs then SF.throw( "Source has no valid inputs" ) end
-	if not entO.Outputs then SF.throw( "Target has no valid outputs" ) end
+	if not entI.Inputs then SF.throw( "Source has no valid inputs", 2 ) end
+	if not entO.Outputs then SF.throw( "Target has no valid outputs", 2 ) end
 	
-	if inputname == "" then SF.throw( "Invalid input name" ) end
-	if outputname == "" then SF.throw( "Invalid output name" ) end
+	if inputname == "" then SF.throw( "Invalid input name", 2 ) end
+	if outputname == "" then SF.throw( "Invalid output name", 2 ) end
 	
-	if not entI.Inputs[ inputname ] then SF.throw( "Invalid source input: " .. inputname ) end
-	if not entO.Outputs[ outputname ] then SF.throw( "Invalid source output: " .. outputname ) end
+	if not entI.Inputs[ inputname ] then SF.throw( "Invalid source input: " .. inputname, 2 ) end
+	if not entO.Outputs[ outputname ] then SF.throw( "Invalid source output: " .. outputname, 2 ) end
 	if entI.Inputs[ inputname ].Src then
 		local CheckInput = entI.Inputs[ inputname ]
-		if CheckInput.SrcId == outputname and CheckInput.Src == entO then SF.throw( "Source \"" .. inputname .. "\" is already wired to target \"" .. outputname .. "\"" ) end
+		if CheckInput.SrcId == outputname and CheckInput.Src == entO then SF.throw( "Source \"" .. inputname .. "\" is already wired to target \"" .. outputname .. "\"", 2 ) end
 	end
 		
 	WireLib.Link_Start( SF.instance.player:UniqueID(), entI, entI:WorldToLocal( entI:GetPos() ), inputname, "cable/rope", Vector( 255, 255, 255 ), 0 )
@@ -404,12 +404,12 @@ function wire_library.delete ( entI, inputname )
 	
 	local entI = SF.Entities.Unwrap( entI )
 	
-	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source" ) end
+	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
 	
 	if not SF.Permissions.check( SF.instance.player, entI, "wire.deleteWire" ) then SF.throw( "Insufficient permissions", 2 ) end
 	
-	if not entI.Inputs or not entI.Inputs[ inputname ] then SF.throw( "Entity does not have input: " .. inputname ) end
-	if not entI.Inputs[ inputname ].Src then SF.throw( "Input \"" .. inputname .. "\" is not wired" ) end
+	if not entI.Inputs or not entI.Inputs[ inputname ] then SF.throw( "Entity does not have input: " .. inputname, 2 ) end
+	if not entI.Inputs[ inputname ].Src then SF.throw( "Input \"" .. inputname .. "\" is not wired", 2 ) end
 	
 	WireLib.Link_Clear( entI, inputname )
 end
@@ -423,7 +423,7 @@ local function parseEntity ( ent, io )
 		ent = SF.instance.data.entity or nil
 	end
 	
-	if not SF.Entities.IsValid( ent ) then SF.throw( "Invalid source" ) end
+	if not SF.Entities.IsValid( ent ) then SF.throw( "Invalid source", 2 ) end
 
 	local ret = {}
 	for k, v in pairs( ent[ io ] ) do
