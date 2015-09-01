@@ -7,31 +7,11 @@ TOOL.Tab			= "Wire"
 -- ------------------------------- Sending / Recieving ------------------------------- --
 include( "starfall/sflib.lua" )
 
-local MakeSF
-
 TOOL.ClientConVar[ "Model" ] = "models/spacecode/sfchip.mdl"
 cleanup.Register( "starfall_processor" )
 
 if SERVER then
 	CreateConVar( "sbox_maxstarfall_processor", 10, { FCVAR_REPLICATED, FCVAR_NOTIFY, FCVAR_ARCHIVE } )
-	
-	function MakeSF ( pl, Pos, Ang, model )
-		if not pl:CheckLimit( "starfall_processor" ) then return false end
-
-		local sf = ents.Create( "starfall_processor" )
-		if not IsValid( sf ) then return false end
-
-		sf:SetAngles( Ang )
-		sf:SetPos( Pos )
-		sf:SetModel( model )
-		sf:Spawn()
-
-		sf.owner = pl
-
-		pl:AddCount( "starfall_processor", sf )
-
-		return sf
-	end
 else
 	language.Add( "Tool.starfall_processor.name", "Starfall - Processor" )
 	language.Add( "Tool.starfall_processor.desc", "Spawns a starfall processor (Press shift+f to switch to screen and back again)" )
@@ -64,8 +44,6 @@ function TOOL:LeftClick ( trace )
 	local model = self:GetClientInfo( "Model" )
 	if not self:GetSWEP():CheckLimit( "starfall_processor" ) then return false end
 
-	local Ang = trace.HitNormal:Angle()
-	Ang.pitch = Ang.pitch + 90
 
 	if not SF.RequestCode( ply, function ( mainfile, files )
 		if not mainfile then return end
@@ -77,21 +55,8 @@ function TOOL:LeftClick ( trace )
 			model = ppdata.models[ mainfile ]
 		end
 
-		local sf = MakeSF( ply, trace.HitPos, Ang, model )
+		local sf = SF.MakeSF( ply, "starfall_processor", trace, model )
 
-		local min = sf:OBBMins()
-		sf:SetPos( trace.HitPos - trace.HitNormal * min.z )
-
-		local const = WireLib.Weld( sf, trace.Entity, trace.PhysicsBone, true, true )
-
-		undo.Create( "Starfall Processor" )
-			undo.AddEntity( sf )
-			undo.AddEntity( const )
-			undo.SetPlayer( ply )
-		undo.Finish()
-
-		ply:AddCleanup( "starfall_processor", sf )
-		
 		sf:Compile( files, mainfile )
 	end ) then
 		SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )

@@ -557,7 +557,7 @@ if SERVER then
         if ply and not IsValid( ply ) then return end
 
         net.Start( "starfall_addnotify" )
-        net.WriteString( msg )
+	net.WriteString( msg )
         net.WriteUInt( notifyType, 8 or 0, 8 )
         net.WriteFloat( duration )
         net.WriteUInt( sound, 8 or 0, 8 )
@@ -580,7 +580,117 @@ if SERVER then
 		else
 			net.Broadcast()
 		end
-    end
+	end
+
+
+	--- Table for acceptable types to be spawned/created by SF.MakeSF.
+	-- Only if an entity type matches a key in this table, will it be allowed to spawn via SF.MakeSF.
+	--@key String - The string representing the ent, as used in ents.Create.
+	--@value String - The 'common' name, for use in displaying to the user.
+	--@server
+	local acceptable_types = {
+		[ "starfall_processor" ] = "Starfall Processor",
+		[ "starfall_screen" ] = "Starfall Screen"
+	}
+
+	--- Function which clears uploaddata and errors
+	-- Prevents 'locking' the user out from spawning if something erroneous occurs whilst MakeSF runs.
+	-- NEVER CALL this unless inside MakeSF.
+	--@param msg Message to error with.
+	--@param ply Player that errored, so we can clear their uploaddata for them to try again. If ply is the err cause, function will skip uploaddata clearing.
+	--@local
+	local function errMaking ( msg, ply )
+		if ply then uploaddata[ ply ] = nil end
+		error( msg )
+	
+	end
+
+	--- Creates a SF of the given type.
+	-- Used for starfall_processor & starfall_screen
+	-- This contains code common to spawning both types of SF
+	--@server
+	--@param ply The player 'spawning' the entity, toolgun owner usually
+	--@param typ The type of SF: "starfall_processor" or "starfall_screen". See 'acceptable_types'
+	--@param trace The trace from the toolgun, used for placement and constraining.
+	--@param model The model that the entity should be set to.
+	--@return Entity - The Starfall entity, of type 'typ', as created by ents.Create.
+	function SF.MakeSF ( ply, typ, trace, model )
+		-- Sanity checks
+		if not IsValid( ply ) then errMaking( "Invalid player during spawning" ) end
+
+		if type( typ ) ~= "string" or typ == "" or not acceptable_types[ typ ] then
+			errMaking( "Cannot make a Starfall of that type: " .. tostring( typ ) )
+		end
+
+		if not trace then errMaking( "No trace data for " .. typ .. " specified!" ) end
+
+		if not model or model == "" then errMaking( "Cannot create a " .. typ .." without a model!" ) end
+
+		-- CheckLimit throws its own error, so just return
+		if not ply:CheckLimit( typ ) then return end
+
+		local sf = ents.Create( typ )
+		if not IsValid( sf ) then errMaking( "Error occurred with creating entity: " .. typ ) end
+
+		local ang = trace.HitNormal:Angle()
+		ang.pitch = ang.pitch + 90
+
+		sf:SetAngles( ang )
+		sf:SetModel( model )
+		sf:Spawn()
+
+		sf:SetPos( trace.HitPos - trace.HitNormal * sf:OBBMins().z )
+
+		-- Lots of ownership stuff
+		-- Old but still supported officially
+		sf.owner = ply
+
+		-- NPP / Other PP's hook onto this for ownership usually.
+		ply:AddCleanup( typ, sf )
+
+		ply:AddCount( typ, sf )
+
+		-- Questionable use cases
+		-- Based on: https://github.com/garrynewman/garrysmod/blob/master/garrysmod/lua/includes/extensions/entity.lua#L53
+		sf:SetVar( "Player", ply )
+		sf:SetVar( "Owner", ply )
+
+		-- Directly set CPPI Owner incase PP doesn't hook onto any of the above.
+		-- CPPI docs: http://ulyssesmod.net/archive/CPPI_v1-3.pdf
+		if CPPI and sf.CPPISetOwner then
+			sf:CPPISetOwner( ply )
+		end
+
+		local weld
+		local tEnt = trace.Entity
+
+		-- World fails the IsValid check.
+		-- Normal ents, like props, will pass this. We definitely want to weld to those.
+		if IsValid( tEnt ) then
+			weld = constraint.Weld( sf, trace.Entity, 0, trace.PhysicsBone, 0, false, true )
+
+		-- We're spawning on the world. Just freeze in place.
+		else
+			local phys = sf:GetPhysicsObject()
+			if IsValid( phys ) then
+				phys:EnableMotion( false )
+			end
+		end
+
+		undo.Create( typ )
+			undo.AddEntity( sf )
+
+			if weld then
+				undo.AddEntity( weld )
+			end
+
+			undo.SetPlayer( ply )
+			undo.SetCustomUndoText( "Undone " .. tostring( acceptable_types[ typ ] ) .. ( sf.EntIndex and " [ " .. sf:EntIndex() .. " ]" or "" ) )
+		undo.Finish()
+
+		return sf
+	end
+
 else
 	net.Receive( "starfall_requpload", function ( len )
 		local ok, list = SF.Editor.BuildIncludesTable()
@@ -599,10 +709,10 @@ else
 				local offset = 1
 				repeat
 					net.Start( "starfall_upload" )
-					net.WriteBit( false )
-					net.WriteString( fname )
-					local data = fdata:sub( offset, offset + 60000 )
-					net.WriteString( data )
+						net.WriteBit( false )
+						net.WriteString( fname )
+						local data = fdata:sub( offset, offset + 60000 )
+						net.WriteString( data )
 					net.SendToServer()
 
 					--print( "\t\tSent data from", offset, "to", offset + #data )
@@ -612,12 +722,12 @@ else
 			end
 
 			net.Start( "starfall_upload" )
-			net.WriteBit( true )
+				net.WriteBit( true )
 			net.SendToServer()
 			--print( "Done sending" )
 		else
 			net.Start( "starfall_upload" )
-			net.WriteBit( false )
+				net.WriteBit( false )
 			net.SendToServer()
 			if list then
 				SF.AddNotify( LocalPlayer(), list, NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
