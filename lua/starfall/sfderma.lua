@@ -765,6 +765,7 @@ function PANEL:Init ()
 
 	self:Dock( FILL )
 	self:DockMargin( 0, 5, 0, 0 )
+	self.Paint = function () end
 
 	local tree = vgui.Create( "StarfallFileTree", self )
 	tree:Dock( FILL )
