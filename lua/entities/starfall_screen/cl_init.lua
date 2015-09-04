@@ -5,7 +5,15 @@ ENT.RenderGroup = RENDERGROUP_OPAQUE
 include( "starfall/SFLib.lua" )
 assert( SF, "Starfall didn't load correctly!" )
 
-local context = SF.CreateContext( nil, nil, nil, SF.Libraries.CreateLocalTbl{"render"} )
+local context
+
+hook.Add( "sf_libs_loaded", "sf_create_screen_context", function ()
+	if SF.Libraries.Local[ "render" ] then
+		context = SF.CreateContext( nil, nil, nil, SF.Libraries.CreateLocalTbl{ "render" } )
+	else
+		context = SF.CreateContext()
+	end
+end )
 
 surface.CreateFont( "Starfall_ErrorFont", {
 	font = "arial",
