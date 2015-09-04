@@ -88,7 +88,7 @@ function hook_library.runRemote ( recipient, ... )
 
 		local ok = table.remove( result, 1 )
 		if not ok then
-			if not result[ 1 ] then return end -- Call failed because of non-existent hook. Ignore
+			if not result[ 1 ] then continue end -- Call failed because of non-existent hook. Ignore
 			k:Error( "Hook 'remote' errored with " .. result[ 1 ], result[ 2 ] )
 			-- Their fault - don't return
 		end
