@@ -15,13 +15,13 @@ function PANEL:Init ()
 	self.locked = false
 
 	local frame = self
-	self:SetVisible( true )
 	self:ShowCloseButton( false )
 	self:SetDraggable( true )
 	self:SetSizable( true )
 	self:SetScreenLock( true )
 	self:SetDeleteOnClose( false )
 	self:MakePopup()
+	self:SetVisible( false )
 
 	self.components = {}
 
@@ -32,11 +32,6 @@ function PANEL:Init ()
 		if h < 315 then h = 315 end
 		self:SetSize( w, h )
 
-		for k, v in pairs( self.components ) do
-			if IsValid( v ) then 
-				v:PerformLayout()
-			end
-		end
 		self:_PerformLayout( ... )
 	end
 
@@ -829,7 +824,7 @@ function PANEL:Init ()
 				end
 			end
 		end
-		addFiles( self:GetValue(), "starfall", tree.Root )
+		addFiles( self:GetValue():PatternSafe(), "starfall", tree.Root )
 		tree.Root:SetExpanded( true )
 	end
 	self.searchBox = searchBox
