@@ -127,6 +127,7 @@ if CLIENT then
 	CreateClientConVar( "sf_editor_fixconsolebug", 0, true, false )
 	CreateClientConVar( "sf_editor_disablequitkeybind", 0, true, false )
 	CreateClientConVar( "sf_editor_disablelinefolding", 0, true, false )
+	CreateClientConVar( "sf_editor_fontsize", 13, true, false )
 
 	local aceFiles = {}
 	local htmlEditorCode = nil
@@ -783,7 +784,18 @@ if CLIENT then
 
 			return panel
 		end
+		local function setWang( wang, label )
+			function wang:OnValueChanged()
+				SF.Editor.saveSettings()
+				timer.Simple( 0.1, function () SF.Editor.updateSettings() end )
+			end
+			wang:GetParent():DockPadding( 10, 1, 10, 1 )
+			wang:Dock( RIGHT )
+
+			return wang, label
+		end
 		
+		setWang( form:NumberWang( "Font size", "sf_editor_fontsize", 5, 40 ) )
 		setDoClick( form:CheckBox( "Enable word wrap", "sf_editor_wordwrap" ) )
 		setDoClick( form:CheckBox( "Show fold widgets", "sf_editor_widgets" ) )
 		setDoClick( form:CheckBox( "Show line numbers", "sf_editor_linenumbers" ) )
@@ -1246,6 +1258,7 @@ if CLIENT then
 		js( "editor.setOption(\"highlightGutterLine\", " .. GetConVarNumber( "sf_editor_activeline" ) .. ")" )
 		js( "editor.setOption(\"enableLiveAutocompletion\", " .. GetConVarNumber( "sf_editor_autocompletion" ) .. ")" )
 		js( "setFoldKeybinds( " .. GetConVarNumber( "sf_editor_disablelinefolding" ) .. ")" )
+		js( "editor.setFontSize(" .. GetConVarNumber( "sf_editor_fontsize" ) .. ")" )
 	end
 
 	--- (Client) Builds a table for the compiler to use
