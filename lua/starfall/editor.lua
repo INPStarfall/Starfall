@@ -115,6 +115,7 @@ if CLIENT then
 	CreateClientConVar( "sf_modelviewer_posx", ScrW() / 2 - 930 / 2, true, false )
 	CreateClientConVar( "sf_modelviewer_posy", ScrH() / 2 - 615 / 2, true, false )
 
+	CreateClientConVar( "sf_editor_wordwrap", 1, true, false )
 	CreateClientConVar( "sf_editor_widgets", 1, true, false )
 	CreateClientConVar( "sf_editor_linenumbers", 1, true, false )
 	CreateClientConVar( "sf_editor_gutter", 1, true, false )
@@ -125,6 +126,7 @@ if CLIENT then
 	CreateClientConVar( "sf_editor_fixkeys", system.IsLinux() and 1 or 0, true, false ) --maybe osx too? need someone to check
 	CreateClientConVar( "sf_editor_fixconsolebug", 0, true, false )
 	CreateClientConVar( "sf_editor_disablequitkeybind", 0, true, false )
+	CreateClientConVar( "sf_editor_disablelinefolding", 0, true, false )
 
 	local aceFiles = {}
 	local htmlEditorCode = nil
@@ -243,7 +245,12 @@ if CLIENT then
 
 		code = code or defaultCode
 
-		SF.Editor.runJS( "newEditSession(\""..string.JavascriptSafe( code or defaultCode ).."\")" )
+		-- Settings to pass to editor when creating a new session
+		local settings = util.TableToJSON({
+			wrap = GetConVarNumber( "sf_editor_wordwrap" )
+		}):JavascriptSafe()
+
+		SF.Editor.runJS( "newEditSession(\"" .. string.JavascriptSafe( code or defaultCode ) .. "\", JSON.parse(\"" .. settings .. "\"))" )
 
 		local tab = SF.Editor.getTabHolder():addTab( name )
 		tab.code = code
@@ -754,11 +761,19 @@ if CLIENT then
 		frame:Center()
 
 		local panel = vgui.Create( "StarfallPanel", frame )
-		panel:SetPos( 5, 40 )
-		function panel:PerformLayout ()
-			self:SetSize( frame:GetWide() - 10, frame:GetTall() - 45 )
-		end
+		panel:Dock( FILL )
+		panel:DockMargin( 0, 5, 0, 0 )
 		frame:AddComponent( "panel", panel )
+
+		local scrollPanel = vgui.Create( "DScrollPanel", panel )
+		scrollPanel:Dock( FILL )
+		scrollPanel:SetPaintBackgroundEnabled( false )
+
+		local form = vgui.Create( "DForm", scrollPanel )	
+		form:Dock( FILL )
+		form:DockPadding( 0, 10, 0, 10 )
+		form.Header:SetVisible( false )
+		form.Paint = function () end
 
 		local function setDoClick ( panel )
 			function panel:OnChange ()
@@ -768,11 +783,8 @@ if CLIENT then
 
 			return panel
 		end
-
-		local form = vgui.Create( "DForm", panel )	
-		form:Dock( FILL )
-		form.Header:SetVisible( false )
-		form.Paint = function () end
+		
+		setDoClick( form:CheckBox( "Enable word wrap", "sf_editor_wordwrap" ) )
 		setDoClick( form:CheckBox( "Show fold widgets", "sf_editor_widgets" ) )
 		setDoClick( form:CheckBox( "Show line numbers", "sf_editor_linenumbers" ) )
 		setDoClick( form:CheckBox( "Show gutter", "sf_editor_gutter" ) )
@@ -783,6 +795,7 @@ if CLIENT then
 		setDoClick( form:CheckBox( "Fix keys not working on Linux", "sf_editor_fixkeys" ) ):SetTooltip( "Some keys don't work with the editor on Linux\nEg. Enter, Tab, Backspace, Arrow keys etc..." )
 		setDoClick( form:CheckBox( "Fix console bug", "sf_editor_fixconsolebug" ) ):SetTooltip( "Fix console opening when pressing ' or @ (UK Keyboad layout)" )
 		setDoClick( form:CheckBox( "Disable quit keybind", "sf_editor_disablequitkeybind" ) ):SetTooltip( "Ctrl-Q" )
+		setDoClick( form:CheckBox( "Disable line folding keybinds", "sf_editor_disablelinefolding" ) )
 
 		function frame:OnOpen ()
 			SF.Editor.editor.components[ "buttonHolder" ]:getButton( "Settings" ).active = true
@@ -1219,6 +1232,11 @@ if CLIENT then
 		frame:SetPos( GetConVarNumber( "sf_modelviewer_posx" ), GetConVarNumber( "sf_modelviewer_posy" ) )
 
 		local js = SF.Editor.runJS
+		js( [[
+			editSessions.forEach( function( session ) {
+				session.setUseWrapMode( ]] .. GetConVarNumber( "sf_editor_wordwrap" ) .. [[ )
+			} )
+		]] )
 		js( "editor.setOption(\"showFoldWidgets\", " .. GetConVarNumber( "sf_editor_widgets" ) .. ")" )
 		js( "editor.setOption(\"showLineNumbers\", " .. GetConVarNumber( "sf_editor_linenumbers" ) .. ")" )
 		js( "editor.setOption(\"showGutter\", " .. GetConVarNumber( "sf_editor_gutter" ) .. ")" )
@@ -1227,6 +1245,7 @@ if CLIENT then
 		js( "editor.setOption(\"highlightActiveLine\", " .. GetConVarNumber( "sf_editor_activeline" ) .. ")" )
 		js( "editor.setOption(\"highlightGutterLine\", " .. GetConVarNumber( "sf_editor_activeline" ) .. ")" )
 		js( "editor.setOption(\"enableLiveAutocompletion\", " .. GetConVarNumber( "sf_editor_autocompletion" ) .. ")" )
+		js( "setFoldKeybinds( " .. GetConVarNumber( "sf_editor_disablelinefolding" ) .. ")" )
 	end
 
 	--- (Client) Builds a table for the compiler to use
