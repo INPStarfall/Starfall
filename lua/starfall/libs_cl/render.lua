@@ -40,9 +40,9 @@ local clamp = math.Clamp
 local max = math.max
 local cam = cam
 local dgetmeta = debug.getmetatable
-local matrix_meta = SF.VMatrix.Metatable --debug.getregistry().VMatrix
+local matrix_meta = SF.GetTypeDef( "VMatrix" ) --debug.getregistry().VMatrix
 
-local v_unwrap = SF.VMatrix.Unwrap
+local v_unwrap = matrix_meta.__unwrap
 
 local currentcolor
 local MATRIX_STACK_LIMIT = 8
@@ -533,7 +533,7 @@ function render_library.cursorPos( ply )
 	local screen = SF.instance.data.entity
 	if not screen then return nil end
 	
-	ply = SF.Entities.Unwrap( ply )
+	ply = SF.GetTypeDef( "Entity" ).__unwrap( ply )
 	
 	-- Get monitor screen pos & size
 	monitor = WireGPU_Monitors[ screen:GetModel() ]
@@ -697,7 +697,7 @@ function render_library.readPixel ( x, y )
 	SF.CheckType( y, "number" )
 
 	local r, g, b = render.ReadPixel( x, y )
-	return SF.Color.Wrap( Color( r, g, b, 255 ) )
+	return SF.GetTypeDef( "Color" ).__wrap( Color( r, g, b, 255 ) )
 end
 
 --- Called when a player uses the screen

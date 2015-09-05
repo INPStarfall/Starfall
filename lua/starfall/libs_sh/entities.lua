@@ -2,8 +2,6 @@
 -- Shared entity library functions
 -------------------------------------------------------------------------------
 
-SF.Entities = {}
-
 --- Entity type
 -- @shared
 local ents_methods, ents_metamethods = SF.Typedef( "Entity" )
@@ -27,25 +25,19 @@ local materialBlacklist = {
 
 -- ------------------------- Internal functions ------------------------- --
 
-SF.Entities.Wrap = wrap
-SF.Entities.Unwrap = unwrap
-SF.Entities.Methods = ents_methods
-SF.Entities.Metatable = ents_metamethods
-SF.Entities.Library = ents_lib
-
 --- Returns true if valid and is not the world, false if not
 -- @param entity Entity to check
-function SF.Entities.IsValid ( entity )
+function ents_metamethods.IsValid ( entity )
 	return IsValid( entity ) and not entity:IsWorld()
 end
-local isValid = SF.Entities.IsValid
+local isValid = ents_metamethods.IsValid
 
 --- Gets the physics object of the entity
 -- @return The physobj, or nil if the entity isn't valid or isn't vphysics
-function SF.Entities.GetPhysObject ( ent )
+function ents_metamethods.GetPhysObject ( ent )
 	return ( isValid( ent ) and ent:GetMoveType() == MOVETYPE_VPHYSICS and ent:GetPhysicsObject() ) or nil
 end
-local getPhysObject = SF.Entities.GetPhysObject
+local getPhysObject = ents_metamethods.GetPhysObject
 
 -- ------------------------- Library functions ------------------------- --
 
@@ -55,7 +47,7 @@ local getPhysObject = SF.Entities.GetPhysObject
 function ents_lib.self ()
 	local ent = SF.instance.data.entity
 	if ent then 
-		return SF.Entities.Wrap( ent )
+		return wrap( ent )
 	else return nil end
 end
 

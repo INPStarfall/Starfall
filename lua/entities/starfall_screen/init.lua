@@ -162,7 +162,7 @@ function ENT:Use ( activator )
 		net.Broadcast()
 	end
 	if self.sharedscreen then
-		self:runScriptHook( "starfallUsed", SF.Entities.Wrap( activator ) )
+		self:runScriptHook( "starfallUsed", SF.GetTypeDef( "Entity" ).__wrap( activator ) )
 	end
 end
 

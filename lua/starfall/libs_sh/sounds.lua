@@ -1,5 +1,3 @@
-SF.Sounds = {}
-
 --- Sound type
 -- @shared
 local sound_methods, sound_metamethods = SF.Typedef( "Sound" )
@@ -8,11 +6,6 @@ local wrap, unwrap = SF.CreateWrapper( sound_metamethods, true, false, debug.get
 --- Sounds library.
 -- @shared
 local sound_library, _ = SF.Libraries.Register( "sounds" )
-
-SF.Sounds.Wrap = wrap
-SF.Sounds.Unwrap = unwrap
-SF.Sounds.Methods = sound_methods
-SF.Sounds.Metatable = sound_metamethods
 
 -- Register Privileges
 do

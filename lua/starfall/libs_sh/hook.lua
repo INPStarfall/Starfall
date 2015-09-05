@@ -66,11 +66,11 @@ end
 -- @param ... Payload. These parameters will be used to call the hook functions
 -- @return tbl A list of the resultset of each called hook
 function hook_library.runRemote ( recipient, ... )
-	if recipient then SF.CheckType( recipient, SF.Entities.Metatable ) end
+	if recipient then SF.CheckType( recipient, SF.GetTypeDef( "Entity" ) ) end
 
 	local recipients
 	if recipient then
-		local ent = SF.Entities.Unwrap( recipient )
+		local ent = SF.GetTypeDef( "Entity" ).__unwrap( recipient )
 		if not ent.instance then SF.throw( "Entity has no starfall instance", 2 ) end
 		recipients = {
 			[ ent.instance ] = true

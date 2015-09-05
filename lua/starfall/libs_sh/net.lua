@@ -80,17 +80,19 @@ function net_library.send ( target )
 		local sendfunc
 		local newtarget
 
+		local unwrap = SF.GetTypeDef( "Entity" ).__unwrap
+
 		if target then
 			if SF.GetType( target ) == "table" then
 				local nt = { }
 				for i = 1, #target do
-					SF.CheckType( SF.Entities.Unwrap( target[ i ] ), "Player", 1 )
-					nt[ i ] = SF.Entities.Unwrap( target[ i ] )
+					SF.CheckType( unwrap( target[ i ] ), "Player", 1 )
+					nt[ i ] = unwrap( target[ i ] )
 				end
 				sendfunc, newtarget = net.Send, nt
 			else
-				SF.CheckType( SF.Entities.Unwrap( target ), "Player", 1 ) -- TODO: unhacky this
-				sendfunc, newtarget = net.Send, SF.Entities.Unwrap( target )
+				SF.CheckType( unwrap( target ), "Player", 1 ) -- TODO: unhacky this
+				sendfunc, newtarget = net.Send, unwrap.__unwrap( target )
 			end
 		else
 			sendfunc = net.Broadcast

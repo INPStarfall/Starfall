@@ -82,7 +82,7 @@ net.Receive( "starfall_screen_used", function ( len )
 
 	if not IsValid( screen ) then return end
 	
-	screen:runScriptHook( "starfallUsed", SF.Entities.Wrap( activator ) )
+	screen:runScriptHook( "starfallUsed", SF.GetTypeDef( "Entity" ).__wrap( activator ) )
 	
 	-- Error message copying
 	if screen.error then

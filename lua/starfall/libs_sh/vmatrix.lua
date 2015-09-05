@@ -1,15 +1,8 @@
 -- Credits to Radon & Xandaros
-SF.VMatrix = {}
-
 --- VMatrix type
 local vmatrix_methods, vmatrix_metamethods = SF.Typedef( "VMatrix" )
 local wrap, unwrap = SF.CreateWrapper( vmatrix_metamethods, true, false )
 local vunwrap = SF.UnwrapObject
-
-SF.VMatrix.Methods = vmatrix_methods
-SF.VMatrix.Metatable = vmatrix_metamethods
-SF.VMatrix.Wrap = wrap
-SF.VMatrix.Unwrap = unwrap
 
 --- Returns a new VMatrix
 -- @return New VMatrix

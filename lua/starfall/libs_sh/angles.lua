@@ -1,5 +1,3 @@
-SF.Angles = {}
-
 --- Angle Type
 -- @shared
 local ang_methods, ang_metamethods = SF.Typedef( "Angle" )
@@ -8,11 +6,6 @@ local wrap, unwrap = SF.CreateWrapper( ang_metamethods, true, false, debug.getre
 SF.DefaultEnvironment.Angle = function ( ... )
 	return wrap( Angle( ... ) )
 end
-
-SF.Angles.Wrap = wrap
-SF.Angles.Unwrap = unwrap
-SF.Angles.Methods = ang_methods
-SF.Angles.Metatable = ang_metamethods
 
 --- __newindex metamethod
 function ang_metamethods.__newindex ( t, k, v )
