@@ -1,0 +1,5 @@
+{
+	"name" : "builtins",
+	"description" : "Adds builtin functions and variables",
+	"version" : "INP"
+}

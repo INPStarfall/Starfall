@@ -257,7 +257,7 @@ function SF.DefaultEnvironment.require (file)
 		loaded = {}
 		SF.instance.data.reqloaded = loaded
 	end
-	
+
 	if loaded[ file ] then
 		return loaded[ file ]
 	else
@@ -285,12 +285,12 @@ end
 -- @return Function of str
 function SF.DefaultEnvironment.loadstring ( str )
 	local func = CompileString( str, "SF: " .. tostring( SF.instance.env ), false )
-	
+
 	-- CompileString returns an error as a string, better check before setfenv
 	if type( func ) == "function" then
 		return setfenv( func, SF.instance.env )
 	end
-	
+
 	return func
 end
 

@@ -1,0 +1,6 @@
+{
+	"name" : "holograms",
+	"description" : "Library for creating and manipulating physics-less models AKA \"Holograms\".",
+	"dependencies" : [ "entities" ],
+	"version" : ""
+}

@@ -123,8 +123,8 @@ local validfonts = {
 }
 
 surface.CreateFont( "sf_screen_font_Default_16_400_9_0000", { size = 16, weight = 400,
-		antialias=false, additive = false, font = "Default",
-		shadow = false, outline = false, blur = 0 } )
+	antialias=false, additive = false, font = "Default",
+	shadow = false, outline = false, blur = 0 } )
 
 local defined_fonts = {
 	["sf_screen_font_Default_16_400_9_0000"] = true
@@ -242,17 +242,17 @@ end
 --- Clears the surface
 -- @param clr Color type to clear with
 function render_library.clear ( clr )
-    if clr == nil then
-        if not SF.instance.data.render.isRendering then SF.throw( "Not in a rendering hook.", 2 ) end
-        render.Clear( 0, 0, 0, 255 )
-    else
-        SF.CheckType( clr, SF.Types[ "Color" ] )
-        if not SF.instance.data.render.isRendering then SF.throw( "Not in a rendering hook.", 2 ) end
-        render.Clear( clr.r, clr.g, clr.b, clr.a )
-    end
+	if clr == nil then
+		if not SF.instance.data.render.isRendering then SF.throw( "Not in a rendering hook.", 2 ) end
+		render.Clear( 0, 0, 0, 255 )
+	else
+		SF.CheckType( clr, SF.Types[ "Color" ] )
+		if not SF.instance.data.render.isRendering then SF.throw( "Not in a rendering hook.", 2 ) end
+		render.Clear( clr.r, clr.g, clr.b, clr.a )
+	end
 end
 
---- Draws a rectangle using the current color. 
+--- Draws a rectangle using the current color.
 -- @param x Top left corner x coordinate
 -- @param y Top left corner y coordinate
 -- @param w Width
@@ -416,7 +416,7 @@ end
 -- \- DejaVu Sans Mono (shipped, monospaced)
 function render_library.createFont ( font, size, weight, antialias, additive, shadow, outline, blur )
 	if not validfonts[ font ] then SF.throw( "invalid font", 2 ) end
-	
+
 	size = tonumber( size ) or 16
 	weight = tonumber( weight ) or 400
 	blur = tonumber( blur ) or 0
@@ -424,14 +424,14 @@ function render_library.createFont ( font, size, weight, antialias, additive, sh
 	additive = additive and true or false
 	shadow = shadow and true or false
 	outline = outline and true or false
-	
+
 	local name = string.format( "sf_screen_font_%s_%d_%d_%d_%d%d%d%d",
 		font, size, weight, blur,
 		antialias and 1 or 0,
 		additive and 1 or 0,
 		shadow and 1 or 0,
 		outline and 1 or 0 )
-	
+
 	if not defined_fonts[ name ] then
 		surface.CreateFont( name, { size = size, weight = weight,
 			antialias = antialias, additive = additive, font = font,
@@ -447,7 +447,7 @@ end
 -- @return height of the text
 function render_library.getTextSize ( text )
 	SF.CheckType( text, "string" )
-	
+
 	surface.SetFont( SF.instance.data.render.font or defaultFont )
 	return surface.GetTextSize( text )
 end
@@ -479,9 +479,9 @@ function render_library.drawText ( x, y, text, alignment )
 	if alignment then
 		SF.CheckType( alignment, "number" )
 	end
-	
+
 	local font = SF.instance.data.render.font or defaultFont
-	
+
 	draw.DrawText( text, font, x, y, currentcolor, alignment or TEXT_ALIGN_LEFT )
 end
 
@@ -532,37 +532,37 @@ function render_library.cursorPos( ply )
 	local Normal, Pos, monitor, Ang
 	local screen = SF.instance.data.entity
 	if not screen then return nil end
-	
+
 	ply = SF.Entities.Unwrap( ply )
-	
+
 	-- Get monitor screen pos & size
 	monitor = WireGPU_Monitors[ screen:GetModel() ]
-		
+
 	-- Monitor does not have a valid screen point
 	if not monitor then return nil end
-		
+
 	Ang = screen:LocalToWorldAngles( monitor.rot )
 	Pos = screen:LocalToWorld( monitor.offset )
-		
+
 	Normal = Ang:Up()
-	
+
 	local Start = ply:GetShootPos()
 	local Dir = ply:GetAimVector()
-	
+
 	local A = Normal:Dot( Dir )
-	
+
 	-- If ray is parallel or behind the screen
 	if A == 0 or A > 0 then return nil end
-	
+
 	local B = Normal:Dot( Pos - Start ) / A
-		if ( B >= 0 ) then
+	if ( B >= 0 ) then
 		local HitPos = WorldToLocal( Start + Dir * B, Angle(), Pos, Ang )
 		local x = ( 0.5 + HitPos.x / ( monitor.RS * 512 / monitor.RatioX ) ) * 512
 		local y = ( 0.5 - HitPos.y / ( monitor.RS * 512 ) ) * 512
-		if x < 0 or x > 512 or y < 0 or y > 512 then return nil end -- Aiming off the screen 
+		if x < 0 or x > 512 or y < 0 or y > 512 then return nil end -- Aiming off the screen
 		return x, y
 	end
-	
+
 	return nil
 end
 
@@ -692,7 +692,7 @@ end
 function render_library.readPixel ( x, y )
 	local data = SF.instance.data.render
 	if not data.isRendering then SF.throw( "Not in rendering hook.", 2 ) end
-	
+
 	SF.CheckType( x, "number" )
 	SF.CheckType( y, "number" )
 

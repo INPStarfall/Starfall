@@ -1,0 +1,5 @@
+{
+	"name" : "http",
+	"description" : "Http library. Requests content from urls.",
+	"version" : "INP"
+}

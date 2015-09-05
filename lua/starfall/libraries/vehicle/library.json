@@ -1,0 +1,6 @@
+{
+	"name" : "vehicle",
+	"description" : "Vehicle type and functions",
+	"dependencies" : [ "entities" ],
+	"version" : "INP"
+}

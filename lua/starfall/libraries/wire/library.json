@@ -1,0 +1,6 @@
+{
+	"name" : "wire",
+	"description" : "Wire library. Handles wire inputs/outputs, wirelinks, etc.",
+	"dependencies" : [ "entities" ],
+	"version" : "INP"
+}

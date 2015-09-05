@@ -663,43 +663,98 @@ else
 end
 
 -- ------------------------------------------------------------------------- --
+local libData = {}
+local libLoaded = {}
 
 if SERVER then
 	util.AddNetworkString( "starfall_client_lib_data" )
 
 	hook.Add( "PlayerAuthed", "starfall_send_lib_data", function ( ply )
 		net.Start( "starfall_client_lib_data" )
+		net.WriteTable( libData )
 		net.Send( ply )
 	end )
 
 	function SF.Libraries.LoadAll ()
+		local function loadLib( lib )
+			if libLoaded[ lib ] ~= nil then
+				return libLoaded[ lib ]
+			end
+
+			local fullDir = "starfall/libraries/" .. lib
+
+			if not file.IsDir( fullDir, "LUA" ) then
+				libLoaded[ lib ] = false
+				return false
+			end
+
+			local libraryJSON = {}
+			if not file.Exists( fullDir .. "/library.json", "LUA" ) then
+				print( "No library.json file defined for library: " .. lib )
+
+				libLoaded[ lib ] = false
+				return false
+			else
+				local libraryJSONData = file.Read( fullDir .. "/library.json", "LUA" )
+				libraryJSON = util.JSONToTable( libraryJSONData )
+				if libraryJSON == nil then
+					print( "Invalid library.json file for library: " .. lib )
+
+					libLoaded[ lib ] = false
+					return false
+				end
+			end
+
+			libData[ lib ] = libraryJSON
+
+			if libraryJSON.dependencies then
+				local failedDependencies = ""
+
+				for _, v in pairs( libraryJSON.dependencies ) do
+					if v == lib then
+						print( "Attempt to load '" .. lib .. "' recursivley" )
+
+						libLoaded[ lib ] = false
+						return false
+					end
+
+					if not loadLib( v ) then
+						failedDependencies = failedDependencies .. "- " .. v .. "\n"
+					end
+				end
+
+				if failedDependencies ~= "" then
+					print( "\nFailed to load the following dependencies for '" .. lib .. "' library:\n" .. failedDependencies )
+
+					libLoaded[ lib ] = false
+					return false
+				end
+			end
+
+			print( "- Loading library: " .. lib )
+
+			for _, v in pairs{ "shared", "server", "client" } do
+				if file.Exists( fullDir .. "/" .. v .. ".lua", "LUA" ) then
+					if v == "server" or v == "shared" then
+						include( fullDir .. "/" .. v .. ".lua" )
+					end
+
+					if v == "client" or v == "shared" then
+						AddCSLuaFile( fullDir .. "/" .. v .. ".lua" )
+					end
+				end
+			end
+
+			libLoaded[ lib ] = true
+			return true
+		end
+
 		MsgN( "-SF - Loading Libraries" )
 
-		local l
-		MsgN( "- Loading shared libraries" )
-		l = file.Find( "starfall/libs_sh/*.lua", "LUA" )
-		for _, filename in pairs( l ) do
-			print( "-  Loading " .. filename )
-			include( "starfall/libs_sh/" .. filename )
-			AddCSLuaFile( "starfall/libs_sh/" .. filename )
+		local _, dirs = file.Find( "starfall/libraries/*", "LUA" )
+		for _, libName in pairs( dirs ) do
+			loadLib( libName )
 		end
-		MsgN( "- End loading shared libraries" )
-
-		MsgN( "- Loading SF server-side libraries" )
-		l = file.Find( "starfall/libs_sv/*.lua", "LUA" )
-		for _, filename in pairs( l ) do
-			print( "-  Loading " .. filename )
-			include( "starfall/libs_sv/" .. filename )
-		end
-		MsgN( "- End loading server-side libraries" )
-
-		MsgN( "- Adding client-side libraries to send list" )
-		l = file.Find( "starfall/libs_cl/*.lua", "LUA" )
-		for _, filename in pairs( l ) do
-			print( "-  Adding " .. filename )
-			AddCSLuaFile( "starfall/libs_cl/" .. filename )
-		end
-		MsgN( "- End loading client-side libraries" )
 
 		MsgN( "-End Loading SF Libraries" )
 
@@ -710,28 +765,55 @@ if SERVER then
 	SF.Libraries.LoadAll()
 else
 	net.Receive( "starfall_client_lib_data", function ()
+		libData = net.ReadTable( )
 		SF.Libraries.LoadAll()
 	end )
 
 	function SF.Libraries.LoadAll ()
+		local function loadLib( lib )
+			if libLoaded[ lib ] then
+				return libLoaded[ lib ]
+			end
+
+			local fullDir = "starfall/libraries/" .. lib
+
+			local libraryJSON = libData[ lib ]
+
+			if libraryJSON.dependencies then
+				local failedDependencies = ""
+
+				for _, v in pairs( libraryJSON.dependencies ) do
+					if not loadLib( v ) then
+						failedDependencies = failedDependencies .. "- " .. v .. "\n"
+					end
+				end
+
+				if failedDependencies ~= "" then
+					print( "\nFailed to load the following dependencies for '" .. lib .. "' library:\n" .. failedDependencies )
+
+					libLoaded[ lib ] = false
+					return false
+				end
+			end
+
+			print( "- Loading library: " .. lib )
+
+			for _, v in pairs{ "shared", "client" } do
+				if file.Exists( fullDir .. "/" .. v .. ".lua", "LUA" ) then
+					include( fullDir .. "/" .. v .. ".lua" )
+				end
+			end
+
+			libLoaded[ lib ] = true
+			return true
+		end
+
 		MsgN( "-SF - Loading Libraries" )
 
-		local l
-		MsgN( "- Loading shared libraries" )
-		l = file.Find( "starfall/libs_sh/*.lua", "LUA" )
-		for _, filename in pairs( l ) do
-			print( "-  Loading " .. filename )
-			include( "starfall/libs_sh/" .. filename )
+		local _, dirs = file.Find( "starfall/libraries/*", "LUA" )
+		for _, libName in pairs( dirs ) do
+			loadLib( libName )
 		end
-		MsgN( "- End loading shared libraries" )
-
-		MsgN( "- Loading client-side libraries" )
-		l = file.Find( "starfall/libs_cl/*.lua", "LUA" )
-		for _, filename in pairs( l ) do
-			print( "-  Loading " .. filename )
-			include( "starfall/libs_cl/" .. filename )
-		end
-		MsgN( "- End loading client-side libraries" )
 
 		MsgN( "-End Loading SF Libraries" )
 
