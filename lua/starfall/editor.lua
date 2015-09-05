@@ -16,6 +16,46 @@ do
 	addon_path = string.TrimRight( string.match( file, ".-/.-/" ), "/" )
 end
 
+local function addToTable( addTo, addFrom )
+	for name, val in pairs( addFrom ) do
+		addTo[ addVal and val or name ] = true
+	end
+end
+local function createCodeMap ()
+
+	local map = {}
+	map.Environment = {}
+	map.Libraries = {}
+	map.Types = {}
+
+	for typ, tbl in pairs( SF.Types ) do
+		if typ == "Environment" then
+
+			addToTable( map.Environment, tbl.__methods )
+
+		elseif typ:find( "Library: " ) and type( tbl.__methods ) == "table" then
+
+			typ = typ:Replace( "Library: ", "" )
+			map.Libraries[ typ ] = {}
+			addToTable( map.Libraries[ typ ], tbl.__methods )
+
+		elseif typ ~= "Callback" and type( tbl.__methods ) == "table" then
+
+			map.Types[ typ ] = {}
+			addToTable( map.Types[ typ ], tbl.__methods )
+
+		end
+	end
+
+	map.Libraries[ "globaltables" ][ "player" ] = true
+
+	for k, v in pairs( map.Libraries ) do
+		map.Environment[ k ] = nil
+	end
+
+	return map
+end
+
 if CLIENT then
 
 	include( "sfderma.lua" )
@@ -297,52 +337,6 @@ if CLIENT then
 
 	end
 
-	local function createLibraryMap ()
-
-		local map = {}
-
-		for lib, tbl in pairs( SF.Types ) do
-			if ( lib == "Environment" or lib:find( "Library: " ) ) and type( tbl.__index ) == "table" then
-				lib = lib:Replace( "Library: ", "" )
-				map[ lib ] = {}
-				for name, val in pairs( tbl.__index ) do
-					table.insert( map[ lib ], name )
-				end
-			end
-		end
-
-		map.Angle = {}
-		for name, val in pairs( SF.Angles.Methods ) do
-			table.insert( map.Angle, name )
-		end
-		map.Color = {}
-		for name, val in pairs( SF.Color.Methods ) do
-			table.insert( map.Color, name )
-		end
-		map.Entity = {}
-		for name, val in pairs( SF.Entities.Methods ) do
-			table.insert( map.Entity, name )
-		end
-		map.Player = {}
-		for name, val in pairs( SF.Players.Methods ) do
-			table.insert( map.Player, name )
-		end
-		map.Sound = {}
-		for name, val in pairs( SF.Sounds.Methods ) do
-			table.insert( map.Sound, name )
-		end
-		map.VMatrix = {}
-		for name, val in pairs( SF.VMatrix.Methods ) do
-			table.insert( map.VMatrix, name )
-		end
-		map.Vector = {}
-		for name, val in pairs( SF.Vectors.Methods ) do
-			table.insert( map.Vector, name )
-		end
-
-		return map
-	end
-
 	function SF.Editor.refreshTab ( tab )
 
 		local tabHolder = SF.Editor.getTabHolder()
@@ -483,20 +477,16 @@ if CLIENT then
 
 		html:SetAllowLua( true )
 
-		local map = createLibraryMap()
+		html:QueueJavascript( "codeMap = JSON.parse(\"" .. util.TableToJSON( SF.Editor.codeMap ):JavascriptSafe() .. "\")" )
 
-		html:QueueJavascript( "libraryMap = JSON.parse(\"" .. util.TableToJSON( map ):JavascriptSafe() .. "\")" )
-
-		local libs = {}
-		local functions = {}
-		table.ForEach( map, function ( lib, vals )
-			if lib == "Environment" or lib:GetChar( 1 ):upper() ~= lib:GetChar( 1 ) then
-				table.insert( libs, lib )
-			end
-			table.ForEach( vals, function ( key, val )
-				table.insert( functions, val )
-			end )
-		end )
+		local libs = table.GetKeys( SF.Editor.codeMap.Libraries )
+		local functions = table.GetKeys( SF.Editor.codeMap.Environment ) 
+		for k, v in pairs( SF.Editor.codeMap.Libraries ) do
+			functions = table.Add( functions, table.GetKeys( v ) )
+		end
+		for k, v in pairs( SF.Editor.codeMap.Types ) do
+			functions = table.Add( functions, table.GetKeys( v ) )
+		end
 
 		html:QueueJavascript( "createStarfallMode(\"" .. table.concat( libs, "|" ) .. "\", \"" .. table.concat( table.Add( table.Copy( functions ), libs ), "|" ) .. "\")" )
 
@@ -941,6 +931,8 @@ if CLIENT then
 	end )
 	net.Receive( "starfall_editor_geteditorcode", function ( len )
 		htmlEditorCode = net.ReadString()
+		SF.Editor.codeMap = net.ReadTable()
+		table.Merge( SF.Editor.codeMap, createCodeMap() )
 	end )
 
 	-- CLIENT ANIMATION
@@ -1037,6 +1029,7 @@ elseif SERVER then
 	hook.Add( "PlayerInitialSpawn", "starfall_file_init", function ( ply )
 		net.Start( "starfall_editor_geteditorcode" )
 			net.WriteString( file.Read( addon_path .. "/html/starfall/editor.html", "GAME" ) )
+			net.WriteTable( createCodeMap() )
 		net.Send( ply )
 
 		plyIndex[ ply ] = 1

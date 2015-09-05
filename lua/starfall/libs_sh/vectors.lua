@@ -27,7 +27,6 @@ function vec_metamethods.__newindex ( t, k, v )
 	end
 end
 
-local _p = vec_metamethods.__index
 --- __index metamethod
 function vec_metamethods.__index ( t, k )
 	if type( k ) == "number" then
@@ -39,7 +38,7 @@ function vec_metamethods.__index ( t, k )
 			return unwrap( t )[ k ]
 		end
 	end
-	return _p[ k ]
+	return vec_metamethods.__methods[ k ]
 end
 
 --- tostring metamethod

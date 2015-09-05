@@ -38,14 +38,12 @@ function color_metatable.__newindex ( t, k, v )
 	end
 end
 
-local _p = color_metatable.__index
-
 --- __index metamethod
 function color_metatable.__index ( t, k )
 	if rgb[ k ] then
 		return rawget( SF.UnwrapObject( t ), rgb[ k ] )
 	else
-		return _p[ k ]
+		return color_metatable.__methods[ k ]
 	end
 end
 

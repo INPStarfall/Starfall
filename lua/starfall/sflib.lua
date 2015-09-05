@@ -113,7 +113,8 @@ function SF.Typedef ( name, supermeta )
 	local methods, metamethods = {}, {}
 	metamethods.__metatable = name
 	metamethods.__index = methods
-	
+	metamethods.__methods = methods
+
 	metamethods.__supertypes = { [ metamethods ] = true }
 	
 	if supermeta then

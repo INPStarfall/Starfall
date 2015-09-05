@@ -48,17 +48,25 @@
 			editor.setOptions({
 				dragEnabled: false,
 				enableLiveAutocompletion: true,
-				scrollSpeed: 1,
+				scrollSpeed: 0.5,
 				useSoftTabs: false,
-				enableMutliselect: false
+				enableMultiselect: false
 			});
 
 			editor.on("change", function(){
 				console.log("RUNLUA:SF.Editor.getActiveTab().code = \"" + addslashes(editor.getValue()) + "\"; SF.Editor.doValidation()")
 			});
 
+			var setScrollSpeed = null;
+			setScrollSpeed = editor.on("change", function() {
+				if(editor.completer) {
+					editor.completer.popup.setScrollSpeed(0.3)
+					editor.off("change", setScrollSpeed)
+				}
+			});
+
 			var editSessions = [];
-			libraryMap = null;
+			codeMap = null;
 
 			function newEditSession( code ) {
 				var session = ace.createEditSession( code, "ace/mode/starfall" )
@@ -183,7 +191,10 @@
 									}
 								]
 							},
-
+							{
+								token : "string",
+								regex : "\\-\\-@.*$"
+							},
 							{
 								token : "comment",
 								regex : "\\-\\-.*$"
@@ -221,6 +232,17 @@
 							}, {
 								token : "string",		   // ' string
 								regex : "'(?:[^\\\\]|\\\\.)*?'"
+							}, {
+								token : [
+									"keyword", "text", "entity.name.function", "entity.name.function", 
+									"text", "paren.lparen", "variable.parameter", "paren.rparen"
+								],
+								regex : "(function)(\\s+)((?:[a-zA-Z_]\\w*[.:])*)([a-zA-Z_]\\w*)(\\s*)(\\()([^)]*)(\\))"
+							}, {
+								token : [
+									"keyword", "text", "paren.lparen", "variable.parameter", "paren.rparen"
+								],
+								regex : "(function)(\\s*)(\\()([^)]*)(\\))"
 							}, {
 								token : "constant.numeric", // float
 								regex : floatNumber
@@ -274,30 +296,23 @@
 							if(iToken && iToken.type === "keyword.operator" && iToken.value === ".") {
 								iToken = iterator.stepBackward();
 								if(iToken && iToken.type === "support.function" && libraries.indexOf(iToken.value) > -1) {
-									return this.returnCompletions(iToken);
+									return this.returnCompletions(codeMap["Libraries"][iToken.value], iToken.value);
 								}
+							}else if(iToken && iToken.type === "keyword.operator" && iToken.value === ":") {
+								var completions = []
+								for(var key in codeMap["Types"]) {
+									completions = completions.concat(this.returnCompletions(codeMap["Types"][key], key))
+								}
+								return completions
 							}
-							return Object.keys(libraryMap).map(function (lib) {
-								if(lib[0] !== lib[0].toUpperCase()){
-									return {
-										value: lib,
-										meta: "library",
-										score: Number.MAX_VALUE
-									};
-								}else{
-									return {};
-								}
-							}).concat(this.returnCompletions({value: "Environment"}));
-
+							return (this.returnCompletions(codeMap["Libraries"], "library")).concat(this.returnCompletions(codeMap["Environment"], ""));
 						};
 
-						this.returnCompletions = function(iToken) {
-							return Object.keys(libraryMap[iToken.value]).map(function (key) { 
-								return libraryMap[iToken.value][key];
-							}).map(function (func) {
+						this.returnCompletions = function(table, note) {
+							return Object.keys(table).map(function (obj) {
 								return {
-									value: func,
-									meta: "function",
+									value: obj,
+									meta: note,
 									score: Number.MAX_VALUE
 								};
 							});
