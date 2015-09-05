@@ -47,7 +47,9 @@ local function createCodeMap ()
 		end
 	end
 
-	map.Libraries[ "globaltables" ][ "player" ] = true
+	if map.Libraries[ "globaltables" ] then
+		map.Libraries[ "globaltables" ][ "player" ] = true
+	end
 
 	for k, v in pairs( map.Libraries ) do
 		map.Environment[ k ] = nil
