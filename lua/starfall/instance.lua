@@ -33,10 +33,6 @@ function SF.Instance:runWithOps ( func, ... )
 	local args = { ... }
 	local traceback
 
-	local wrapperfunc = function ()
-		return { func( unpack( args ) ) }
-	end
-
 	local function xpcall_callback ( err )
 		if type( err ) == "table" then
 			if err.message then
@@ -54,15 +50,21 @@ function SF.Instance:runWithOps ( func, ... )
 	local oldSysTime = SysTime()
 
 	local function cpuCheck ()
-		self.cpuTime.current =  SysTime() - oldSysTime
+		self.cpuTime.current = SysTime() - oldSysTime
 
 		local ind = self.cpuTime.bufferI
-		self.cpuTime.buffer[ ind ] = self.cpuTime.current
+		self.cpuTime.buffer[ ind ] = ( self.cpuTime.buffer[ ind ] or 0 ) + self.cpuTime.current
 
 		if self.cpuTime:getBufferAverage() > SF.cpuQuota:GetFloat() then
 			debug.sethook( nil )
 			SF.throw( "CPU Quota exceeded.", 0, true )
 		end
+	end
+
+	local wrapperfunc = function ()
+		local ret = { func( unpack( args ) ) }
+		cpuCheck()
+		return ret
 	end
 
 	debug.sethook( cpuCheck, "", 500 )
