@@ -33,10 +33,6 @@ function SF.Instance:runWithOps ( func, ... )
 	local args = { ... }
 	local traceback
 
-	local wrapperfunc = function ()
-		return { func( unpack( args ) ) }
-	end
-
 	local function xpcall_callback ( err )
 		if type( err ) == "table" then
 			if err.message then
@@ -63,6 +59,12 @@ function SF.Instance:runWithOps ( func, ... )
 			debug.sethook( nil )
 			SF.throw( "CPU Quota exceeded.", 0, true )
 		end
+	end
+
+	local wrapperfunc = function ()
+		local ret = { func( unpack( args ) ) }
+		cpuCheck()
+		return ret
 	end
 
 	debug.sethook( cpuCheck, "", 500 )
