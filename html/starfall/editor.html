@@ -43,7 +43,6 @@
 			var editor = ace.edit("editor");
 			editor.setTheme("ace/theme/monokai");
 			editor.getSession().setMode("ace/mode/lua");
-			editor.getSession().setUseWrapMode(true);
 			editor.setShowPrintMargin(false);
 			editor.setOptions({
 				dragEnabled: false,
@@ -68,9 +67,11 @@
 			var editSessions = [];
 			codeMap = null;
 
-			function newEditSession( code ) {
+			function newEditSession( code, settings ) {
 				var session = ace.createEditSession( code, "ace/mode/starfall" )
-				session.setUseWrapMode(true);
+				if ( settings.wrap != null ) {
+					session.setUseWrapMode( settings.wrap )
+				}
 				editSessions.push(session);
 			}
 
@@ -96,6 +97,22 @@
 					if(markers[id].clazz == "ace_error"){
 						editor.session.removeMarker(id)
 					}
+				}
+			}
+
+			var foldBinds = [
+				editor.commands.commands.fold,
+				editor.commands.commands.unfold,
+				editor.commands.commands.foldall,
+				editor.commands.commands.unfoldall,
+				editor.commands.commands.foldOther 
+			]
+
+			function setFoldKeybinds( bool ) {
+				if ( bool ) {
+					editor.commands.removeCommands( foldBinds )
+				} else {
+					editor.commands.addCommands( foldBinds )
 				}
 			}
 
