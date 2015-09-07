@@ -84,7 +84,7 @@ function hook_library.runRemote ( recipient, ... )
 	local result = {}
 	for k, _ in pairs( recipients ) do
 		SF.instance = nil
-		res = { k:runScriptHookForResult( "remote", instance.data.entity, instance.player, ... ) }
+		res = { k:runScriptHookForResult( "remote", SF.WrapObject( instance.data.entity ), SF.WrapObject( instance.player ), ... ) }
 
 		local ok = table.remove( res, 1 )
 		if not ok then
