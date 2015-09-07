@@ -51,6 +51,17 @@ local function parseInOutputs ( str, errText )
 	return names, types
 end
 
+--- Pre-define the wire inputs for a starfall chip.<br>
+-- Inputs are created for you prior to chip execution.<br>
+-- Multiple variables can be defined on a single line, separated by commas.<br>
+-- <font color='red'><b>Caution:</b></font> E2 Variables have an uppercase first character, so must your 'variable' name.<br>
+-- <font color='red'><b>Caution:</b></font> The 'type' of your variable must match E2 naming convention. 'normal', 'string', 'vector', etc.<br>
+-- @name inputs
+-- @class directive
+-- @param variable Name of the input, along with type, joined with a ':' ( colon ).
+-- @usage
+-- \--@inputs SomeString:String
+-- -- CODE
 SF.Preprocessor.SetGlobalDirective( "inputs", function ( args, filename, data, instance )
 	if not args or args == "" then
 		print( "Invalid arguments to @inputs" )
@@ -65,6 +76,17 @@ SF.Preprocessor.SetGlobalDirective( "inputs", function ( args, filename, data, i
 	WireLib.AdjustSpecialInputs( instance.data.entity, names, types )
 end )
 
+--- Pre-define the wire outputs for a starfall chip.<br>
+-- Outputs are created for you prior to chip execution.<br>
+-- Multiple variables can be defined on a single line, separated by commas.<br>
+-- <font color='red'><b>Caution:</b></font> E2 Variables have an uppercase first character, so must your 'variable' name.<br>
+-- <font color='red'><b>Caution:</b></font> The 'type' of your variable must match E2 naming convention. 'normal', 'string', 'vector', etc.<br>
+-- @name outputs
+-- @class directive
+-- @param variable Name of the output, along with type, joined with a ':' ( colon ).
+-- @usage
+-- \--@outputs SomeString:String
+-- -- CODE
 SF.Preprocessor.SetGlobalDirective( "outputs", function ( args, filename, data, instance )
 	if not args or args == "" then
 		print( "Invalid arguments to @outputs" )
