@@ -315,6 +315,7 @@ if CLIENT then
 
 		local function valid ()
 			local code = SF.Editor.getActiveTab().code
+			if code and code == "" then SF.Editor.runJS( "editor.session.clearAnnotations(); clearErrorLines()" ) return end
 
 			local err = CompileString( code, "Validation", false )
 
