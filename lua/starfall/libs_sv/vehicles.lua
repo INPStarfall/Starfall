@@ -1,5 +1,8 @@
 assert( SF.Vehicles )
 
+--- Vehicle type
+--@class class
+--@name Vehicle
 local vehicle_methods = SF.Vehicles.Methods
 local vehicle_metamethods = SF.Vehicles.Metatable
 
