@@ -2,19 +2,20 @@
 -- Serverside Entity functions
 -------------------------------------------------------------------------------
 
-assert( SF.Entities )
+assert( SF.Libraries.Get( "entities" ) )
 
 local huge = math.huge
 local abs = math.abs
 
-local ents_lib = SF.Entities.Library
-local ents_metatable = SF.Entities.Metatable
+local ents_lib = SF.Libraries.Get( "entities" ).__methods
+local ents_metatable = SF.GetTypeDef( "Entity" )
+
 
 --- Entity type
 --@class class
 --@name Entity
-local ents_methods = SF.Entities.Methods
-local wrap, unwrap = SF.Entities.Wrap, SF.Entities.Unwrap
+local ents_methods = ents_metatable.__methods
+local wrap, unwrap = ents_metatable.__wrap, ents_metatable.__unwrap
 local vunwrap = SF.UnwrapObject
 
 -- Register privileges
@@ -37,12 +38,14 @@ end
 
 -- ------------------------- Internal Library ------------------------- --
 
+local isValid = ents_metatable.IsValid
+local getPhysObject = ents_metatable.GetPhysObject
+
 --- Gets the entity's owner
 -- TODO: Optimize this!
 -- @return The entities owner, or nil if not found
-function SF.Entities.GetOwner ( entity )
-	local valid = SF.Entities.IsValid
-	if not valid( entity ) then return end
+function ents_metatable.GetOwner ( entity )
+	if not isValid( entity ) then return end
 	
 	if entity.IsPlayer and entity:IsPlayer() then
 		return entity
@@ -50,15 +53,15 @@ function SF.Entities.GetOwner ( entity )
 	
 	if CPPI then
 		local owner = entity:CPPIGetOwner()
-		if valid( owner ) then return owner end
+		if isValid( owner ) then return owner end
 	end
 	
 	if entity.GetPlayer then
 		local ply = entity:GetPlayer()
-		if valid( ply ) then return ply end
+		if isValid( ply ) then return ply end
 	end
 	
-	if entity.owner and valid( entity.owner ) and entity.owner:IsPlayer() then
+	if entity.owner and isValid( entity.owner ) and entity.owner:IsPlayer() then
 		return entity.owner
 	end
 	
@@ -73,33 +76,31 @@ function SF.Entities.GetOwner ( entity )
 	
 	if entity.GetOwner then
 		local ply = entity:GetOwner()
-		if valid( ply ) then return ply end
+		if isValid( ply ) then return ply end
 	end
 
 	return nil
 end
+local getOwner = ents_metatable.GetOwner
 
 --- Checks to see if a player can modify an entity without the override permission
 -- @param ply The player
 -- @param ent The entity being modified
-function SF.Entities.CanModify ( ply, ent )
-	return ( CPPI and ent:CPPICanPhysgun( ply ) ) or SF.Entities.GetOwner( ent ) == ply
+function ents_metatable.CanModify ( ply, ent )
+	return ( CPPI and ent:CPPICanPhysgun( ply ) ) or getOwner( ent ) == ply
 end
-
-local isValid = SF.Entities.IsValid
-local getPhysObject = SF.Entities.GetPhysObject
-local getOwner = SF.Entities.GetOwner
-local canModify = SF.Entities.CanModify
+local canModify = ents_metatable.CanModify
 
 -- Add wire inputs/outputs
 local function postload ()
-	if SF.Wire then
-		SF.Wire.AddInputType( "ENTITY", function ( data )
+	local wireLib = SF.Libraries.Get( "Wire" )
+	if wireLib then
+		wireLib.AddInputType( "ENTITY", function ( data )
 			if data == nil then return nil end
 			return wrap( data )
 		end )
 
-		SF.Wire.AddOutputType( "ENTITY", function ( data )
+		wireLib.AddOutputType( "ENTITY", function ( data )
 			if data == nil then return nil end
 			SF.CheckType( data,ents_metatable )
 			

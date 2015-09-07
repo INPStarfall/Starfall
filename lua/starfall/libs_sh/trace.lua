@@ -202,8 +202,8 @@ local wrap
 local unwrap
 
 local function postload ()
-	wrap = SF.Entities.Wrap
-	unwrap = SF.Entities.Unwrap
+	wrap = SF.GetTypeDef( "Entity" ).__wrap
+	unwrap = SF.GetTypeDef( "Entity" ).__unwrap
 end
 SF.Libraries.AddHook( "postload", postload )
 

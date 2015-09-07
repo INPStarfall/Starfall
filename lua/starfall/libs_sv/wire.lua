@@ -40,7 +40,7 @@ local function parseInOutputs ( str, errText )
 			print( "Invalid " .. errText .. " name: " .. name )
 			return false
 		end
-		if not SF.Wire.InputConverters[ typ ] then
+		if not wire_metamethods.InputConverters[ typ ] then
 			print( "Invalid/Unknown " .. errText .. " type: " .. typ )
 			return false
 		end
@@ -92,7 +92,7 @@ function wire_metamethods.onLoad ( instance )
 	function ent:TriggerInput ( key, value )
 		local tmp = SF.instance
 		SF.instance = nil
-		self:runScriptHook( "input", key, SF.Wire.InputConverters[ self.Inputs[ key ].Type ]( value ) )
+		self:runScriptHook( "input", key, wire_metamethods.InputConverters[ self.Inputs[ key ].Type ]( value ) )
 		SF.instance = tmp
 	end
 
@@ -111,9 +111,6 @@ function wire_metamethods.onLoad ( instance )
 		SF.instance = tmp
 	end
 end
-
-SF.Wire = {}
-SF.Wire.Library = wire_library
 
 local wirelink_methods, wirelink_metatable = SF.Typedef( "Wirelink" )
 local wlwrap, wlunwrap = SF.CreateWrapper( wirelink_metatable, true, true )
@@ -134,24 +131,6 @@ do
 	P.registerPrivilege( "wire.getOutputs", "Get Outputs", "Allows the user to get Outputs of an entity" )
 end
 
----
--- @class table
--- @name SF.Wire.WlMetatable
-SF.Wire.WlMetatable = wirelink_metatable
-SF.Wire.WlMethods = wirelink_methods
-
----
--- @class function
--- @name SF.Wire.WlWrap
--- @param wirelink
-SF.Wire.WlWrap = wlwrap
-
----
--- @class function
--- @name SF.Wire.WlUnwrap
--- @param wrapped
-SF.Wire.WlUnwrap = wlunwrap
-
 -- ------------------------- Internal Library ------------------------- --
 
 -- Allowed Expression2's types in tables and their short names
@@ -167,9 +146,9 @@ local expression2types = {
 
 local function convertFromExpression2 ( value, shortTypeName )
 	local typ = expression2types[ shortTypeName ]
-	if not typ or not SF.Wire.InputConverters[ typ ] then return nil end
+	if not typ or not wire_metamethods.InputConverters[ typ ] then return nil end
 
-	return SF.Wire.InputConverters[ typ ]( value )
+	return wire_metamethods.InputConverters[ typ ]( value )
 end
 
 local function convertToExpression2 ( value )
@@ -188,7 +167,7 @@ local function convertToExpression2 ( value )
 
 		if typ == "table" then 
 			-- It is still table, do recursive convert
-			return SF.Wire.OutputConverters.TABLE( value ), "t"
+			return wire_metamethods.OutputConverters.TABLE( value ), "t"
 
 		-- Unwrapped entity (wirelink goes to this, but it returns it as entity; don't think somebody needs to put wirelinks in table)
 		elseif typ == "Entity" then return value, "e" end
@@ -272,20 +251,20 @@ local outputConverters ={
 	end
 }
 
-SF.Wire.InputConverters = inputConverters
-SF.Wire.OutputConverters = outputConverters
+wire_metamethods.InputConverters = inputConverters
+wire_metamethods.OutputConverters = outputConverters
 
 --- Adds an input type
 -- @param name Input type name. Case insensitive.
 -- @param converter The function used to convert the wire data to SF data (eg, wrapping)
-function SF.Wire.AddInputType( name, converter )
+function wire_metamethods.AddInputType( name, converter )
 	inputConverters[ name:upper() ] = converter
 end
 
 --- Adds an output type
 -- @param name Output type name. Case insensitive.
 -- @param deconverter The function used to check for the appropriate type and convert the SF data to wire data (eg, unwrapping)
-function SF.Wire.AddOutputType( name, deconverter )
+function wire_metamethods.AddOutputType( name, deconverter )
 	outputConverters[ name:upper() ] = deconverter
 end
 
@@ -370,11 +349,11 @@ function wire_library.create ( entI, entO, inputname, outputname )
 	SF.CheckType( inputname, "string" )
 	SF.CheckType( outputname, "string" )
 		
-	local entI = SF.Entities.Unwrap( entI )
-	local entO = SF.Entities.Unwrap( entO )
+	local entI = SF.GetTypeDef( "Entity" ).__unwrap( entI )
+	local entO = SF.GetTypeDef( "Entity" ).__unwrap( entO )
 	
-	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
-	if not SF.Entities.IsValid( entO ) then SF.throw( "Invalid target", 2 ) end
+	if not SF.GetTypeDef( "Entity" ).IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
+	if not SF.GetTypeDef( "Entity" ).IsValid( entO ) then SF.throw( "Invalid target", 2 ) end
 	
 	if not SF.Permissions.check( SF.instance.player, entI, "wire.createWire" ) or not SF.Permissions.check( SF.instance.player, entO, "wire.createWire" ) then SF.throw( "Insufficient permissions", 2 ) end
 	
@@ -402,9 +381,9 @@ function wire_library.delete ( entI, inputname )
 	SF.CheckType( entI, SF.Types[ "Entity" ] )
 	SF.CheckType( inputname, "string" )
 	
-	local entI = SF.Entities.Unwrap( entI )
+	local entI = SF.GetTypeDef( "Entity" ).__unwrap( entI )
 	
-	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
+	if not SF.GetTypeDef( "Entity" ).IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
 	
 	if not SF.Permissions.check( SF.instance.player, entI, "wire.deleteWire" ) then SF.throw( "Insufficient permissions", 2 ) end
 	
@@ -417,13 +396,13 @@ end
 local function parseEntity ( ent, io )
 	if ent then
 		SF.CheckType( ent, SF.Types[ "Entity" ] )
-		ent = SF.Entities.Unwrap( ent )
+		ent = SF.GetTypeDef( "Entity" ).__unwrap( ent )
 		if not SF.Permissions.check( SF.instance.player, ent, "wire.get" .. io ) then SF.throw( "Insufficient permissions", 2 ) end
 	else
 		ent = SF.instance.data.entity or nil
 	end
 	
-	if not SF.Entities.IsValid( ent ) then SF.throw( "Invalid source", 2 ) end
+	if not SF.GetTypeDef( "Entity" ).IsValid( ent ) then SF.throw( "Invalid source", 2 ) end
 
 	local ret = {}
 	for k, v in pairs( ent[ io ] ) do
@@ -515,7 +494,7 @@ end
 --- Returns the entity that the wirelink represents
 function wirelink_methods:entity ()
 	SF.CheckType( self, wirelink_metatable )
-	return SF.Entities.Wrap( wlunwrap( self ) )
+	return SF.GetTypeDef( "Entity" ).__wrap( wlunwrap( self ) )
 end
 
 --- Returns a table of all of the wirelink's inputs

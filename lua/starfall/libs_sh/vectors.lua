@@ -1,5 +1,3 @@
-SF.Vectors = {}
-
 --- Vector type
 -- @shared
 local vec_methods, vec_metamethods = SF.Typedef( "Vector" )
@@ -8,11 +6,6 @@ local wrap, unwrap = SF.CreateWrapper( vec_metamethods, true, false, debug.getre
 SF.DefaultEnvironment.Vector = function ( ... )
 	return wrap( Vector( ... ) )
 end
-
-SF.Vectors.Wrap = wrap
-SF.Vectors.Unwrap = unwrap
-SF.Vectors.Methods = vec_methods
-SF.Vectors.Metatable = vec_metamethods
 
 --- __newindex metamethod
 function vec_metamethods.__newindex ( t, k, v )

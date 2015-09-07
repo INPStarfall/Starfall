@@ -4,26 +4,23 @@
 local holograms_library, holograms_library_metamethods = SF.Libraries.Register( "holograms" )
 
 --- Hologram type
-local hologram_methods, hologram_metamethods = SF.Typedef( "Hologram", SF.Entities.Metatable )
+local hologram_methods, hologram_metamethods = SF.Typedef( "Hologram", SF.GetTypeDef( "Entity" ) )
 
 local vunwrap = SF.UnwrapObject
 
-SF.Holograms = {}
-SF.Holograms.defaultquota = CreateConVar( "sf_holograms_defaultquota", "7200", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
+hologram_metamethods.defaultquota = CreateConVar( "sf_holograms_defaultquota", "7200", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
 	"The default number of holograms allowed to spawn via Starfall scripts across all instances" )
 
-SF.Holograms.personalquota = CreateConVar( "sf_holograms_personalquota", "300", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
+hologram_metamethods.personalquota = CreateConVar( "sf_holograms_personalquota", "300", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
 	"The default number of holograms allowed to spawn via Starfall scripts for a single instance" )
 
-SF.Holograms.burstrate = CreateConVar( "sf_holograms_burstrate", "10", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
+hologram_metamethods.burstrate = CreateConVar( "sf_holograms_burstrate", "10", { FCVAR_ARCHIVE, FCVAR_REPLICATED },
     "The default number of holograms allowed to spawn in a short interval of time via Starfall scripts for a single instance ( burst )" )
 
-SF.Holograms.Methods = hologram_methods
-SF.Holograms.Metatable = hologram_metamethods
-
 local dsetmeta = debug.setmetatable
-local old_ent_wrap = SF.Entities.Wrap
-function SF.Entities.Wrap ( obj )
+local ents_metatable = SF.GetTypeDef( "Entity" )
+local old_ent_wrap = ents_metatable.__wrap
+function ents_metatable.__wrap ( obj )
 	local w = old_ent_wrap( obj )
 	if IsValid( obj ) and obj:IsValid() and obj:GetClass() == "starfall_hologram" then
 		dsetmeta( w, hologram_metamethods )
@@ -38,7 +35,7 @@ SF.Libraries.AddHook( "initialize", function ( inst )
 	inst.data.holograms = {
 		holos = {},
 		count = 0,
-		burst = SF.Holograms.burstrate:GetInt() or 10
+		burst = hologram_metamethods.burstrate:GetInt() or 10
 	}
 
 	insts[ inst ] = true
@@ -49,7 +46,7 @@ SF.Libraries.AddHook( "deinitialize", function (inst)
 	local holos = inst.data.holograms.holos
 	local holo = next( holos )
 	while holo do
-		local holoent = SF.Entities.Unwrap( holo )
+		local holoent = ents_metatable.__unwrap( holo )
 		if IsValid( holoent ) then
 			holoent:Remove()
 		end
@@ -64,7 +61,7 @@ end)
 
 local function hologramOnDestroy ( holoent, holodata )
 	if not holodata.holos then return end
-	local holo = SF.Entities.Wrap( holoent )
+	local holo = ents_metatable.__wrap( holoent )
 	if holodata.holos[ holo ] then
 		holodata.holos[ holo ] = nil
 		holodata.count = holodata.count - 1
@@ -80,7 +77,7 @@ function hologram_methods:setPos ( pos )
 	SF.CheckType( self, hologram_metamethods )
 	SF.CheckType( pos, SF.Types[ "Vector" ] )
 	local pos = vunwrap( pos )
-	local holo = SF.Entities.Unwrap( self )
+	local holo = ents_metatable.__unwrap( self )
 	if holo then holo:SetPos( pos ) end
 end
 
@@ -89,8 +86,8 @@ end
 function hologram_methods:setAng ( ang )
 	SF.CheckType( self, hologram_metamethods )
 	SF.CheckType( ang, SF.Types[ "Angle" ] )
-	local holo = SF.Entities.Unwrap( self )
-	if holo then holo:SetAngles( SF.Angles.Unwrap( ang ) ) end
+	local holo = ents_metatable.__unwrap( self )
+	if holo then holo:SetAngles( SF.GetTypeDef( "Angle" ).__unwrap( ang ) ) end
 end
 
 --- Sets the hologram linear velocity
@@ -99,7 +96,7 @@ function hologram_methods:setVel ( vel )
 	SF.CheckType( self, hologram_metamethods )
 	SF.CheckType( vel, SF.Types[ "Vector" ] )
 	local vel = vunwrap( vel )
-	local holo = SF.Entities.Unwrap( self )
+	local holo = ents_metatable.__unwrap( self )
 	if holo then holo:SetLocalVelocity( vel ) end
 end
 
@@ -108,19 +105,19 @@ end
 function hologram_methods:setAngVel ( angvel )
 	SF.CheckType( self, hologram_metamethods )
 	SF.CheckType( angvel, SF.Types[ "Angle" ] )
-	local holo = SF.Entities.Unwrap( self )
-	if holo then holo:SetLocalAngularVelocity( SF.Angles.Unwrap( angvel ) ) end
+	local holo = ents_metatable.__unwrap( self )
+	if holo then holo:SetLocalAngularVelocity( SF.GetTypeDef( "Angle" ).__unwrap( angvel ) ) end
 end
 
 --- Parents this hologram to the specified hologram
 function hologram_methods:setParent ( parent, attachment )
 	SF.CheckType( self, hologram_metamethods )
-	local child = SF.Entities.Unwrap( self )
+	local child = ents_metatable.__unwrap( self )
 	if not child then return end
 	
 	if parent then
-		SF.CheckType( parent, SF.Entities.Metatable )
-		local parent = SF.Entities.Unwrap( parent )
+		SF.CheckType( parent, ents_metatable )
+		local parent = ents_metatable.__unwrap( parent )
 		if not parent then return end
 		
 		-- Prevent cyclic parenting ( = crashes )
@@ -147,7 +144,7 @@ function hologram_methods:setScale ( scale )
 	SF.CheckType( self, hologram_metamethods )
 	SF.CheckType( scale, SF.Types[ "Vector" ] )
 	local scale = vunwrap( scale )
-	local holo = SF.Entities.Unwrap( self )
+	local holo = ents_metatable.__unwrap( self )
 	if holo then
 		holo:SetScale( scale )
 	end
@@ -164,7 +161,7 @@ function hologram_methods:setClip ( index, enabled, origin, normal, islocal )
 
 	local origin, normal = vunwrap( origin ), vunwrap( normal )
 
-	local holo = SF.Entities.Unwrap( self )
+	local holo = ents_metatable.__unwrap( self )
 	if holo then
 		holo:UpdateClip( index, enabled, origin, normal, islocal )
 	end
@@ -174,7 +171,7 @@ end
 -- These IDs become invalid when the hologram's model changes.
 function hologram_methods:getFlexes ()
 	SF.CheckType( self, hologram_metamethods )
-	local holoent = SF.Entities.Unwrap( self )
+	local holoent = ents_metatable.__unwrap( self )
 	local flexes = {}
 	for i = 0, holoent:GetFlexNum() - 1 do
 		flexes[ holoent:GetFlexName( i ) ] = i
@@ -191,7 +188,7 @@ function hologram_methods:setFlexWeight ( flexid, weight )
 	if flexid < 0 or flexid >= holoent:GetFlexNum() then
 		SF.throw( "Invalid flex: "..flexid, 2 )
 	end
-	local holoent = SF.Entities.Unwrap( self )
+	local holoent = ents_metatable.__unwrap( self )
 	if IsValid( holoent ) then
 		holoent:SetFlexWeight( self, weight )
 	end
@@ -201,7 +198,7 @@ end
 function hologram_methods:setFlexScale ( scale )
 	SF.CheckType( self, hologram_metamethods )
 	SF.CheckType( scale, "number" )
-	local holoent = SF.Entities.Unwrap( self )
+	local holoent = ents_metatable.__unwrap( self )
 	if IsValid( holoent ) then
 		holoent:SetFlexScale( scale )
 	end
@@ -212,7 +209,7 @@ end
 -- @server
 function hologram_methods:remove ()
     SF.CheckType( self, hologram_metamethods )
-    local holoent = SF.Entities.Unwrap( self )
+    local holoent = ents_metatable.__unwrap( self )
     if IsValid( holoent ) then
         holoent:Remove()
     end
@@ -225,7 +222,7 @@ end
 function hologram_methods:setModel ( model )
     SF.CheckType( model, "string" )
 
-    local this = SF.Entities.Unwrap( self )
+    local this = ents_metatable.__unwrap( self )
     if IsValid( this ) then
         this:SetModel( model )
     end
@@ -238,7 +235,7 @@ end
 function hologram_methods:suppressEngineLighting ( suppress )
     SF.CheckType( suppress, "boolean" )
 
-    local this = SF.Entities.Unwrap( self )
+    local this = ents_metatable.__unwrap( self )
     if IsValid( this ) then
         this:SetNetworkedBool( "suppressEngineLighting", suppress )
     end
@@ -266,7 +263,7 @@ local function max_reached ()
     for _, v in pairs( plyCount ) do
         c = c + v
     end
-    if c >= SF.Holograms.defaultquota:GetInt() then return true else return false end
+    if c >= hologram_metamethods.defaultquota:GetInt() then return true else return false end
 end
 
 --- Checks if the users personal limit of holograms has been exhausted
@@ -274,12 +271,12 @@ end
 -- @param i Instance to use, this will relate to the player in question
 -- @return True/False depending on if the personal limit has been reached for SF Holograms
 local function personal_max_reached ( i )
-    return plyCount[ i.player ] >= SF.Holograms.personalquota:GetInt()
+    return plyCount[ i.player ] >= hologram_metamethods.personalquota:GetInt()
 end
 
 timer.Create( "SF_Hologram_BurstCounter", 1/4, 0, function ()
     for i, _ in pairs( insts ) do
-        if i.data.holograms.burst < SF.Holograms.burstrate:GetInt() or 10 then -- Should allow for dynamic changing of burst rate from the server.
+        if i.data.holograms.burst < hologram_metamethods.burstrate:GetInt() or 10 then -- Should allow for dynamic changing of burst rate from the server.
             i.data.holograms.burst = i.data.holograms.burst + 1
         end
     end
@@ -298,12 +295,12 @@ function holograms_library.create ( pos, ang, model, scale )
 	end
 
 	local pos = vunwrap( pos )
-	local ang = SF.Angles.Unwrap( ang )
+	local ang = SF.GetTypeDef( "Angle" ).__unwrap( ang )
 
     local instance = SF.instance
     if not can_spawn( instance ) then return SF.throw( "Can't spawn holograms that often", 2 )
-    elseif personal_max_reached( instance ) then return SF.throw( "Can't spawn holograms, maximum personal limit of " .. SF.Holograms.personalquota:GetInt() .. " has been reached", 2 )
-    elseif max_reached() then return SF.throw( "Can't spawn holograms, maximum limit of " .. SF.Holograms.defaultquota:GetInt() .. " has been reached", 2 ) end
+    elseif personal_max_reached( instance ) then return SF.throw( "Can't spawn holograms, maximum personal limit of " .. hologram_metamethods.personalquota:GetInt() .. " has been reached", 2 )
+    elseif max_reached() then return SF.throw( "Can't spawn holograms, maximum limit of " .. hologram_metamethods.defaultquota:GetInt() .. " has been reached", 2 ) end
 
     local holodata = instance.data.holograms
     local holoent = ents.Create( "starfall_hologram" )
@@ -318,7 +315,7 @@ function holograms_library.create ( pos, ang, model, scale )
             holoent:SetScale( scale )
         end
 
-        local holo = SF.Entities.Wrap( holoent )
+        local holo = ents_metatable.__wrap( holoent )
 
         holodata.holos[ holo ] = holo
         holodata.count = holodata.count + 1

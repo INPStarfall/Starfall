@@ -1,15 +1,8 @@
-SF.Color = {}
-
 --- Color type
 --@shared
 local color_methods, color_metatable = SF.Typedef( "Color" )
 
 local wrap, unwrap = SF.CreateWrapper( color_metatable, true, false, debug.getregistry().Color )
-
-SF.Color.Methods = color_methods
-SF.Color.Metatable = color_metatable
-SF.Color.Wrap = wrap
-SF.Color.Unwrap = unwrap
 
 --- Same as the Gmod Color type
 -- @name SF.DefaultEnvironment.Color
