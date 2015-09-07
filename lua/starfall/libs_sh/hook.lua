@@ -84,13 +84,15 @@ function hook_library.runRemote ( recipient, ... )
 	local result = {}
 	for k, _ in pairs( recipients ) do
 		SF.instance = nil
-		result = { k:runScriptHookForResult( "remote", instance.data.entity, instance.player, ... ) }
+		res = { k:runScriptHookForResult( "remote", instance.data.entity, instance.player, ... ) }
 
-		local ok = table.remove( result, 1 )
+		local ok = table.remove( res, 1 )
 		if not ok then
-			if not result[ 1 ] then continue end -- Call failed because of non-existent hook. Ignore
-			k:Error( "Hook 'remote' errored with " .. result[ 1 ], result[ 2 ] )
+			if not res[ 1 ] then continue end -- Call failed because of non-existent hook. Ignore
+			k:Error( "Hook 'remote' errored with " .. res[ 1 ], res[ 2 ] )
 			-- Their fault - don't return
+		else
+			table.insert( result, res )
 		end
 	end
 
