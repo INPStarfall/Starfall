@@ -39,14 +39,9 @@ If you want to contribute to Starfall, you are required to abide by these sets o
 - Use spaces between curly braces and their enclosing body, it is also acceptable to use a newline with appropriate indentation instead. ( See table literal multi-line example below. )
   - E.g `local tbl = { "Hi", 2, var }`
 - Table literals must be delimited by commas which proceed their values. The last value must not have a proceeding comma.
-  - E.g
-	    local tbl2 = {
-		    "Multi-line",
-		    2,
-		    lastVal
-	    }
+  - E.g `local tbl2 = { "Multi-line", 2, lastVal }`
 - Use spaces before the argument list of a function definition. 
-  - E.g. `fuction func ( var1, var2 )`.
+  - E.g. `function func ( var1, var2 )`.
 - Use spaces before any unary operator; before and after any binary operator. 
   - E.g. `local var = 5 + 3` and `local var2 = -var + 3`.
 - Use of one-liners/ single-line multi-statements is discouraged. 
