@@ -2,6 +2,8 @@
 
 SF.Vehicles = {}
 
+--- Vehicle type for GMod Vehicles<br>
+-- They still behave exactly as <a href='./Entity.html'>Entities</a>, see Entities Type for defined functions
 local vehicle_methods, vehicle_metamethods = SF.Typedef( "Vehicle", SF.Entities.Metatable )
 
 local vwrap = SF.WrapObject
@@ -26,6 +28,8 @@ SF.AddObjectUnwrapper( vehicle_metamethods, unwrap )
 SF.Vehicles.Wrap = wrap
 SF.Vehicles.Unwrap = unwrap
 
+--- toString
+--@shared
 function vehicle_metamethods:__tostring ()
 	local ent = unwrap( self )
 	if not ent then
