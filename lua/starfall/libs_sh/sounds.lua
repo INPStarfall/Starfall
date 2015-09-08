@@ -74,7 +74,7 @@ function sound_methods:play ()
 end
 
 --- Stops the sound from being played.
--- @param fade Time in seconds to fade out, if nil or 0 the sound stops instantly.
+-- @param dt Time in seconds to fade out, if nil or 0 the sound stops instantly.
 function sound_methods:stop ( dt )
 	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
 	if dt then
