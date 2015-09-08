@@ -361,6 +361,19 @@ function ents_methods:getMaterial ()
     return ent:GetMaterial() or ""
 end
 
+--- Gets an entities' submaterial
+-- @shared
+-- @class function
+-- @param index, number, Material's index.
+-- @return Submaterial
+function ents_methods:getSubMaterial ( index )
+    SF.CheckType( index, "number" )
+    
+    local ent = unwrap( self )
+    if not isValid( ent ) then return nil, "invalid entity" end
+    return ent:GetSubMaterial( index - 1 ) or ""
+end
+
 --- Sets an entities' material
 -- @shared
 -- @class function
@@ -373,6 +386,23 @@ function ents_methods:setMaterial ( material )
     local ent = unwrap( self )
     if not isValid( ent ) then return nil, "invalid entity" end
     ent:SetMaterial( material )
+    return wrap( ent )
+end
+
+--- Sets an entities' submaterial
+-- @shared
+-- @class function
+-- @param index, number, Material's index.
+-- @param material, string, New material name.
+-- @return The Entity being modified.
+function ents_methods:setSubMaterial ( index, material )
+    SF.CheckType( index, "number" )
+    SF.CheckType( material, "string" )
+    if materialBlacklist[ material ] then SF.throw( "This material has been blacklisted", 2 ) end
+    
+    local ent = unwrap( self )
+    if not isValid( ent ) then return nil, "invalid entity" end
+    ent:SetSubMaterial( index - 1, material )
     return wrap( ent )
 end
 
