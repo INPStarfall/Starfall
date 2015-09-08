@@ -364,7 +364,7 @@ end
 --- Gets an entities' submaterial
 -- @shared
 -- @class function
--- @param index, number, Material's index.
+-- @param index Number, Material's index.
 -- @return Submaterial
 function ents_methods:getSubMaterial ( index )
     SF.CheckType( index, "number" )
@@ -377,7 +377,7 @@ end
 --- Sets an entities' material
 -- @shared
 -- @class function
--- @param material, string, New material name.
+-- @param material String, New material name.
 -- @return The Entity being modified.
 function ents_methods:setMaterial ( material )
     SF.CheckType( material, "string" )
@@ -392,8 +392,8 @@ end
 --- Sets an entities' submaterial
 -- @shared
 -- @class function
--- @param index, number, Material's index.
--- @param material, string, New material name.
+-- @param index Number, Material's index.
+-- @param material String, New material name.
 -- @return The Entity being modified.
 function ents_methods:setSubMaterial ( index, material )
     SF.CheckType( index, "number" )
@@ -403,7 +403,7 @@ function ents_methods:setSubMaterial ( index, material )
     local ent = unwrap( self )
     if not isValid( ent ) then return nil, "invalid entity" end
     ent:SetSubMaterial( index - 1, material )
-    return wrap( ent )
+    return ent
 end
 
 --- Sets an entities' bodygroup
