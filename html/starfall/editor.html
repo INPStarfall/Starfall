@@ -58,7 +58,7 @@
 
 			var setScrollSpeed = null;
 			setScrollSpeed = editor.on("change", function() {
-				if(editor.completer) {
+				if(editor.completer && editor.completer.popup) {
 					editor.completer.popup.setScrollSpeed(0.3)
 					editor.off("change", setScrollSpeed)
 				}
