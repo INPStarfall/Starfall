@@ -1,6 +1,6 @@
 {
-	"name" : "players",
+	"name" : "player",
 	"description" : "Player functions",
-	"dependencies" : [ "entities" ],
+	"dependencies" : [ "entity" ],
 	"version" : "INP"
 }

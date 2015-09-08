@@ -1,6 +1,6 @@
 {
 	"name" : "trace",
 	"description" : "Provides functions for doing line/AABB traces",
-	"dependencies" : [ "entities" ],
+	"dependencies" : [ "entity" ],
 	"version" : "INP"
 }

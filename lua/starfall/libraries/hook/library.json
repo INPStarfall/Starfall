@@ -1,6 +1,6 @@
 {
 	"name" : "hook",
 	"description" : "Deals with hooks",
-	"dependencies" : [ "entities" ],
+	"dependencies" : [ "entity" ],
 	"version" : "INP"
 }

@@ -1,6 +1,6 @@
 {
 	"name" : "quaternion",
 	"description" : "Quaternion library",
-	"dependencies" : [ "entities" ],
+	"dependencies" : [ "entity" ],
 	"version" : "INP"
 }
