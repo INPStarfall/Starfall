@@ -141,21 +141,6 @@ local wirelink_methods, wirelink_metatable = SF.Typedef( "Wirelink" )
 local wlwrap, wlunwrap = SF.CreateWrapper( wirelink_metatable, true, true )
 local vwrap, vunwrap = SF.WrapObject, SF.UnwrapObject
 
--- Register privileges
-do
-	local P = SF.Permissions
-	P.registerPrivilege( "wire.setOutputs", "Set outputs", "Allows the user to specify the set of outputs" )
-	P.registerPrivilege( "wire.setInputs", "Set inputs", "Allows the user to specify the set of inputs" )
-	P.registerPrivilege( "wire.output", "Output", "Allows the user to set the value of an output" )
-	P.registerPrivilege( "wire.input", "Input", "Allows the user to read the value of an input" )
-	P.registerPrivilege( "wire.wirelink.read", "Wirelink Read", "Allows the user to read from wirelink" )
-	P.registerPrivilege( "wire.wirelink.write", "Wirelink Write", "Allows the user to write to wirelink" )
-	P.registerPrivilege( "wire.createWire", "Create Wire", "Allows the user to create a wire between two entities" )
-	P.registerPrivilege( "wire.deleteWire", "Delete Wire", "Allows the user to delete a wire between two entities" )
-	P.registerPrivilege( "wire.getInputs", "Get Inputs", "Allows the user to get Inputs of an entity" )
-	P.registerPrivilege( "wire.getOutputs", "Get Outputs", "Allows the user to get Outputs of an entity" )
-end
-
 ---
 -- @class table
 -- @name SF.Wire.WlMetatable
@@ -318,7 +303,7 @@ end
 -- @param names An array of input names. May be modified by the function.
 -- @param types An array of input types. May be modified by the function.
 function wire_library.adjustInputs ( names, types )
-	if not SF.Permissions.check( SF.instance.player, nil, "wire.setInputs" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.chip.adjust.input" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( names, "table" )
 	SF.CheckType( types, "table" )
 	local ent = SF.instance.data.entity
@@ -348,7 +333,7 @@ end
 -- @param names An array of output names. May be modified by the function.
 -- @param types An array of output types. May be modified by the function.
 function wire_library.adjustOutputs ( names, types )
-	if not SF.Permissions.check( SF.instance.player, nil, "wire.setOutputs" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.chip.adjust.output" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( names, "table" )
 	SF.CheckType( types, "table" )
 	local ent = SF.instance.data.entity
@@ -398,7 +383,7 @@ function wire_library.create ( entI, entO, inputname, outputname )
 	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
 	if not SF.Entities.IsValid( entO ) then SF.throw( "Invalid target", 2 ) end
 	
-	if not SF.Permissions.check( SF.instance.player, entI, "wire.createWire" ) or not SF.Permissions.check( SF.instance.player, entO, "wire.createWire" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.entity.wire.create", { entI, entO } ) then SF.throw( "Insufficient permissions", 2 ) end
 	
 	if not entI.Inputs then SF.throw( "Source has no valid inputs", 2 ) end
 	if not entO.Outputs then SF.throw( "Target has no valid outputs", 2 ) end
@@ -428,7 +413,7 @@ function wire_library.delete ( entI, inputname )
 	
 	if not SF.Entities.IsValid( entI ) then SF.throw( "Invalid source", 2 ) end
 	
-	if not SF.Permissions.check( SF.instance.player, entI, "wire.deleteWire" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.entity.wire.delete", entI ) then SF.throw( "Insufficient permissions", 2 ) end
 	
 	if not entI.Inputs or not entI.Inputs[ inputname ] then SF.throw( "Entity does not have input: " .. inputname, 2 ) end
 	if not entI.Inputs[ inputname ].Src then SF.throw( "Input \"" .. inputname .. "\" is not wired", 2 ) end
@@ -440,7 +425,7 @@ local function parseEntity ( ent, io )
 	if ent then
 		SF.CheckType( ent, SF.Types[ "Entity" ] )
 		ent = SF.Entities.Unwrap( ent )
-		if not SF.Permissions.check( SF.instance.player, ent, "wire.get" .. io ) then SF.throw( "Insufficient permissions", 2 ) end
+		if not SF.Permissions.check( SF.instance.player, "wire.get." .. io, ent ) then SF.throw( "Insufficient permissions", 2 ) end
 	else
 		ent = SF.instance.data.entity or nil
 	end
@@ -461,21 +446,21 @@ end
 -- @param entI Entity with input(s)
 -- @return Table of entity's inputs
 function wire_library.getInputs ( entI )
-	return parseEntity( entI, "Inputs" )
+	return parseEntity( entI, "input" )
 end
 
 --- Returns a table of entity's outputs
 -- @param entO Entity with output(s)
 -- @return Table of entity's outputs
 function wire_library.getOutputs ( entO )
-	return parseEntity( entO, "Outputs" )
+	return parseEntity( entO, "output" )
 end
 
 -- ------------------------- Wirelink ------------------------- --
 
 --- Retrieves an output. Returns nil if the output doesn't exist.
 wirelink_metatable.__index = function ( self, k )
-	if not SF.Permissions.check( SF.instance.player, nil, "wire.wirelink.read" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.wirelink.read" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( self, wirelink_metatable )
 	if wirelink_methods[ k ] then
 		return wirelink_methods[ k ]
@@ -495,7 +480,7 @@ end
 
 --- Writes to an input.
 wirelink_metatable.__newindex = function ( self, k, v )
-	if not SF.Permissions.check( SF.instance.player, nil, "wire.wirelink.write" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.wirelink.write" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( self, wirelink_metatable )
 	local wl = wlunwrap( self )
 	if not wl or not wl:IsValid() or not wl.extended then return end -- TODO: What is wl.extended?
@@ -634,7 +619,7 @@ end
 local wire_ports_methods, wire_ports_metamethods = SF.Typedef( "Ports" )
 
 function wire_ports_metamethods:__index ( name )
-	if not SF.Permissions.check( SF.instance.player, nil, "wire.input" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.chip.IO.input" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( name, "string" )
 	local instance = SF.instance
 	local ent = instance.data.entity
@@ -648,7 +633,7 @@ function wire_ports_metamethods:__index ( name )
 end
 
 function wire_ports_metamethods:__newindex ( name, value )
-	if not SF.Permissions.check( SF.instance.player, nil, "wire.output" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "wire.chip.IO.output" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( name,"string" )
 	local instance = SF.instance
 	local ent = instance.data.entity

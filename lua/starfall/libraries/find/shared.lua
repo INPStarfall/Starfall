@@ -8,12 +8,6 @@ local find_library, _ = SF.Libraries.Register( "find" )
 
 local vunwrap = SF.UnwrapObject
 
--- Register privileges
-do
-	local P = SF.Permissions
-	P.registerPrivilege( "find", "Find", "Allows the user to access the find library" )
-end
-
 local find_cooldown
 if SERVER then
 	find_cooldown = CreateConVar( "sf_find_cooldown_sv", "0.01", { FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_DONTRECORD } )

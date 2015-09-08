@@ -15,13 +15,6 @@ local vwrap, vunwrap = SF.WrapObject, SF.UnwrapObject
 -- @shared
 local ents_lib, _ = SF.Libraries.Register( "entities" )
 
--- Register privileges
-do
-	local P = SF.Permissions
-	P.registerPrivilege( "entities.setColor", "Set Color", "Allows the user to change the color of an entity" )
-	P.registerPrivilege( "entities.setSubMaterial", "Set SubMaterial", "Allows the user to change a specific SubMaterial of an entity" )
-end
-
 local materialBlacklist = {
 	[ "pp/copy" ] = true
 }
@@ -107,7 +100,7 @@ function ents_methods:setColor ( clr )
 
 	local this = unwrap( self )
 	if IsValid( this ) then
-		if not SF.Permissions.check( SF.instance.player, this, "entities.setColor" ) then return end
+		if not SF.Permissions.check( SF.instance.player, "entity.setColor", this ) then return end
 		this:SetColor( clr )
 		this:SetRenderMode( clr.a == 255 and RENDERMODE_NORMAL or RENDERMODE_TRANSALPHA )
 	end
@@ -401,7 +394,7 @@ function ents_methods:setSubMaterial ( ind, mat )
 	local ent = unwrap( self )
 	if not isValid( ent ) then return nil, "invalid entity" end
 
-	if not SF.Permissions.check( SF.instance.player, ent, "entities.setSubMaterial" ) then return end
+	if not SF.Permissions.check( SF.instance.player, "entities.setSubMaterial", ent ) then return end
 	if materialBlacklist[ mat ] then SF.throw( "Material: " .. ( mat or "" ) .. " is blacklisted!", 2 ) end
 
 	ent:SetSubMaterial( ind and ind - 1 or nil, mat )

@@ -14,13 +14,6 @@ SF.Sounds.Unwrap = unwrap
 SF.Sounds.Methods = sound_methods
 SF.Sounds.Metatable = sound_metamethods
 
--- Register Privileges
-do
-	local P = SF.Permissions
-	P.registerPrivilege( "sound.create", "Sound", "Allows the user to create sounds" )
-	P.registerPrivilege( "sound.modify", "Sound", "Allows the user to modify created sounds" )
-end
-
 -- Register functions to be called when the chip is initialised and deinitialised
 SF.Libraries.AddHook( "initialize", function ( inst )
 	inst.data.sounds = {
@@ -43,10 +36,11 @@ end )
 -- @param path Filepath to the sound file.
 -- @return Sound Object
 function sound_library.create ( ent, path )
-	if not SF.Permissions.check( SF.instance.player, { ent, path }, "sound.create" ) then SF.throw( "Insufficient permissions", 2 ) end
-
 	SF.CheckType( ent, SF.Types[ "Entity" ] )
 	SF.CheckType( path, "string" )
+
+
+	if not SF.Permissions.check( SF.instance.player, "sound.create", SF.Types[ "Entity" ].__unwrap( ent ), path ) then SF.throw( "Insufficient permissions", 2 ) end
 
 	if path:match( '["?]' ) then
 		SF.throw( "Invalid sound path: " .. path, 2 )
@@ -68,7 +62,7 @@ end
 
 --- Starts to play the sound.
 function sound_methods:play ()
-	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "sound.modify", unwrap( self ) ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( self, sound_metamethods )
 	unwrap( self ):Play()
 end
@@ -76,7 +70,7 @@ end
 --- Stops the sound from being played.
 -- @param dt Time in seconds to fade out, if nil or 0 the sound stops instantly.
 function sound_methods:stop ( dt )
-	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "sound.modify", unwrap( self ) ) then SF.throw( "Insufficient permissions", 2 ) end
 	if dt then
 		SF.CheckType( dt, "number" )
 		unwrap( self ):FadeOut( math.max( dt, 0 ) )
@@ -89,7 +83,7 @@ end
 -- @param vol Volume to set to, between 0 and 1.
 -- @param dt Time in seconds to transition to this new volume.
 function sound_methods:setVolume ( vol, dt )
-	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "sound.modify", unwrap( self ) ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( vol, "number" )
 
 	if dt then
@@ -107,7 +101,7 @@ end
 -- @param pitch Pitch to set to, between 0 and 255.
 -- @param dt Time in seconds to transition to this new pitch.
 function sound_methods:setPitch ( pitch, dt )
-	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "sound.modify", unwrap( self ) ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( pitch, "number" )
 	
 	if dt then
@@ -129,7 +123,7 @@ end
 --- Sets the sound level in dB.
 -- @param level dB level, see <a href='https://developer.valvesoftware.com/wiki/Soundscripts#SoundLevel'> Valve Dev Wiki</a>, for information on the value to use.
 function sound_methods:setSoundLevel ( level )
-	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "sound.modify", unwrap( self ) ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( level, "number" )
 	unwrap( self ):SetSoundLevel( math.Clamp( level, 0, 511 ) )
 end

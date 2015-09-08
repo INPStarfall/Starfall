@@ -48,7 +48,7 @@ if SERVER then
 	AddCSLuaFile( "libraries.lua" )
 	AddCSLuaFile( "preprocessor.lua" )
 	AddCSLuaFile( "database.lua" )
-	AddCSLuaFile( "permissions/core.lua" )
+	AddCSLuaFile( "permissions.lua" )
 	AddCSLuaFile( "editor.lua" )
 	AddCSLuaFile( "sfderma.lua" )
 	AddCSLuaFile( "callback.lua" )
@@ -61,7 +61,7 @@ include( "instance.lua" )
 include( "libraries.lua" )
 include( "preprocessor.lua" )
 include( "database.lua" )
-include( "permissions/core.lua" )
+include( "permissions.lua" )
 include( "editor.lua" )
 include( "sfhelper.lua" )
 
@@ -662,10 +662,13 @@ else
     end )
 end
 
--- ------------------------------------------------------------------------- --
 local libData = {}
 local libSoftDepend = {}
 local libLoaded = {}
+
+function SF.Libraries.wasLoaded( lib )
+	return libLoaded[ lib ] ~= nil and libLoaded[ lib ]
+end
 
 if SERVER then
 	util.AddNetworkString( "starfall_client_lib_data" )

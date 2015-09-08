@@ -6,14 +6,6 @@
 -- @shared
 local file_library, _ = SF.Libraries.Register( "file" )
 
--- Register privileges
-do
-	local P = SF.Permissions
-	P.registerPrivilege( "file.read", "Read files", "Allows the user to read files from data/sf_scriptdata directory" )
-	P.registerPrivilege( "file.write", "Write files", "Allows the user to write files to data/sf_scriptdata directory" )
-	P.registerPrivilege( "file.exists", "File existence check", "Allows the user to determine whether a file in data/sf_scriptdata exists" )
-end
-
 file.CreateDir( "sf_filedata/" )
 
 --- Reads a file from path
@@ -21,7 +13,7 @@ file.CreateDir( "sf_filedata/" )
 -- @return Contents, or nil if error
 -- @return Error message if applicable
 function file_library.read ( path )
-	if not SF.Permissions.check( SF.instance.player, path, "file.read" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "file.read", path ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( path, "string" )
 	if path:find( "..", 1, true ) then SF.throw( "path contains '..'", 2 ) return end
 	local contents = file.Read( "sf_filedata/" .. path, "DATA" )
@@ -33,7 +25,7 @@ end
 -- @return True if OK, nil if error
 -- @return Error message if applicable
 function file_library.write ( path, data )
-	if not SF.Permissions.check( SF.instance.player, path, "file.write" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "file.write", path ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( path, "string" )
 	SF.CheckType( data, "string" )
 	if path:find( "..", 1, true ) then SF.throw( "path contains '..'", 2 ) return end
@@ -46,7 +38,7 @@ end
 -- @param data String that will be appended to the file.
 -- @return Error message if applicable
 function file_library.append ( path, data )
-	if not SF.Permissions.check( SF.instance.player, path, "file.write" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "file.write", path ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( path, "string" )
 	SF.CheckType( data, "string" )
 	if path:find( "..", 1, true ) then SF.throw( "path contains '..'", 2 ) return end
@@ -59,7 +51,7 @@ end
 -- @return True if exists, false if not, nil if error
 -- @return Error message if applicable
 function file_library.exists ( path )
-	if not SF.Permissions.check( SF.instance.player, path, "file.exists" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "file.exists", path ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( path, "string" )
 	if path:find( "..", 1, true ) then SF.throw( "path contains '..'", 2 ) return end
 	return file.Exists( "sf_filedata/" .. path, "DATA" )
@@ -70,7 +62,7 @@ end
 -- @return True if successful, nil if error
 -- @return Error message if applicable
 function file_library.delete ( path )
-	if not SF.Permissions.check( SF.instance.player, path, "file.write" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "file.write", path ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( path, "string" )
 	if path:find( "..", 1, true ) then SF.throw( "path contains '..'", 2 ) return end
 	if not file.Exists( "sf_filedata/" .. path, "DATA" ) then SF.throw( "file not found", 2 ) return end
@@ -81,7 +73,7 @@ end
 --- Creates a directory
 -- @param path Filepath relative to data/sf_filedata/. Cannot contain '..'
 function file_library.createDir ( path )
-	if not SF.Permissions.check( SF.instance.player, path, "file.write" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "file.write", path ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( path, "string" )
 	if path:find( "..", 1, true ) then SF.throw( "path contains '..'", 2 ) return end
 	file.CreateDir( "sf_filedata/" .. path )

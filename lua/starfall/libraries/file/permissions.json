@@ -1,0 +1,85 @@
+{
+	"file" : {
+		"description" : "",
+		"children" : {
+			"read" : {
+				"description" : "Allows the user to read files",
+				"children" : {
+					"client" : {
+						"description" : "Allows the user to read files from the client",
+						"children" : {
+							"self" : {
+								"description" : "Allows the user to read files from their client",
+								"default" : true
+							},
+							"buddy" : {
+								"description" : "Allows the user to read files from buddies",
+								"default" : true
+							},
+							"other" : {
+								"description" : "Allows the user to read files from other users",
+								"default" : false
+							}
+						}
+					},
+					"server" : {
+						"description" : "Allows the user to read files from the server",
+						"default" : true
+					}
+				}
+			},
+			"write" : {
+				"description" : "Allows the user to write files",
+				"children" : {
+					"client" : {
+						"description" : "Allows the user to write files to the client",
+						"children" : {
+							"self" : {
+								"description" : "Allows the user to write files to their client",
+								"default" : true
+							},
+							"buddy" : {
+								"description" : "Allows the user to write files to buddies",
+								"default" : true
+							},
+							"other" : {
+								"description" : "Allows the user to write files to other users",
+								"default" : false
+							}
+						}
+					},
+					"server" : {
+						"description" : "Allows the user to write files to the server",
+						"default" : true
+					}
+				}
+			},
+			"exists" : {
+				"description" : "Allows the user to check if a file exists",
+				"children" : {
+					"client" : {
+						"description" : "Allows the user to check if a file exists on the client",
+						"children" : {
+							"self" : {
+								"description" : "Allows the user to check a file exists on their client",
+								"default" : true
+							},
+							"buddy" : {
+								"description" : "Allows the user to check if a file exists on their buddies client",
+								"default" : true
+							},
+							"other" : {
+								"description" : "Allows the user to check if a file exists on other users clients",
+								"default" : false
+							}
+						}
+					},
+					"server" : {
+						"description" : "Allows the user to check if a file exists on the server",
+						"default" : true
+					}
+				}
+			}
+		}
+	}
+}

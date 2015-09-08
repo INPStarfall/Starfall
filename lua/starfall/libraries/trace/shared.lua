@@ -190,11 +190,13 @@ trace_library.CONTENTS_TRANSLUCENT = CONTENTS_TRANSLUCENT
 trace_library.CONTENTS_LADDER = CONTENTS_LADDER
 trace_library.CONTENTS_HITBOX = CONTENTS_HITBOX
 
+--[[
 -- Register privileges
 do
 	local P = SF.Permissions
 	P.registerPrivilege( "trace", "Trace", "Allows the user to start traces" )
 end
+--]]
 
 -- Local functions
 
@@ -231,7 +233,7 @@ end
 -- @param mask Trace mask
 -- @return Result of the trace
 function trace_library.trace ( start, endpos, filter, mask )
-	if not SF.Permissions.check( SF.instance.player, nil, "trace" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "trace" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( start, SF.Types[ "Vector" ] )
 	SF.CheckType( endpos, SF.Types[ "Vector" ] )
 
@@ -259,7 +261,7 @@ end
 -- @param mask Trace mask
 -- @return Result of the trace
 function trace_library.traceHull ( start, endpos, minbox, maxbox, filter, mask )
-	if not SF.Permissions.check( SF.instance.player, nil, "trace" ) then SF.throw( "Insufficient permissions", 2 ) end
+	if not SF.Permissions.check( SF.instance.player, "trace" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( start, SF.Types[ "Vector" ] )
 	SF.CheckType( endpos, SF.Types[ "Vector" ] )
 	SF.CheckType( minbox, SF.Types[ "Vector" ] )

@@ -1,0 +1,95 @@
+{
+	"wire" : {
+		"description" : "Allows access to all wire library functions",
+		"children" : {
+			"chip" : {
+				"description" : "Allows access to all chip-based wire functions",
+				"default" : true,
+				"children" : {
+					"adjust" : {
+						"description" : "Allows the user to adjust the chip's inputs and outputs",
+						"children" : {
+							"input" : {
+								"description" : "Allows the user to adjust the chip's inputs"
+							},
+							"output" : {
+								"description" : "Allows the user to adjust the chip's outputs"
+							}
+						}
+					},
+					"IO" : {
+						"description" : "Allows the user to read and write to the input and output tables",
+						"default" : true,
+						"children" : {
+							"input" : {
+								"description" : "Allows the user to read a value of an input"
+							},
+							"output" : {
+								"description" : "Allows the user to write a value of an output"
+							}
+						}
+					}
+				}
+			},
+			"wirelink" : {
+				"description" : "Allows the user to read and write a wirelink",
+				"default" : true,
+				"children" : {
+					"read" : {
+						"description" : "Allows the user to read from a wirelink"
+					},
+					"write" : {
+						"description" : "Allows the user to write to a wirelink"
+					}
+				}
+			},
+			"entity" : {
+				"description" : "Allows the user to access entity based wire functions",
+				"children" : {
+					"wire" : {
+						"description" : "Allows the user to create and delete wires between entities",
+						"children" : {
+							"create" : {
+								"description" : "Allows the user to create wires between entities",
+								"children" : {
+									"self" : { "default" : true },
+									"buddy" : { "default" : true },
+									"other" : { "default" : "owner" }
+								}
+							},
+							"delete" : {
+								"description" : "Allows the user to delete wires between entities",
+								"children" : {
+									"self" : { "default" : true },
+									"buddy" : { "default" : true },
+									"other" : { "default" : "owner" }
+								}
+							}
+						}
+					},
+					"get" : {
+						"description" : "Allows the user to get the names of inputs and outputs on an entity",
+						"children" : {
+							"input" : {
+								"description" : "Allows the user to get the names of an entities' inputs",
+								"children" : {
+									"self" : { "default" : true },
+									"buddy" : { "default" : true },
+									"other" : { "default" : "owner" }
+								}
+							},
+							"output" : {
+								"description" : "Allows the user to get the names of an entities' outputs",
+								"children" : {
+									"self" : { "default" : true },
+									"buddy" : { "default" : true },
+									"other" : { "default" : "owner" }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
