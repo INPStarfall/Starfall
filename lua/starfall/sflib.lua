@@ -664,6 +664,7 @@ end
 
 -- ------------------------------------------------------------------------- --
 local libData = {}
+local libSoftDepend = {}
 local libLoaded = {}
 
 if SERVER then
@@ -674,6 +675,20 @@ if SERVER then
 		net.WriteTable( libData )
 		net.Send( ply )
 	end )
+
+	local function loadDir( fullDir )
+		for _, v in pairs{ "shared", "server", "client" } do
+			if file.Exists( fullDir .. "/" .. v .. ".lua", "LUA" ) then
+				if v == "server" or v == "shared" then
+					include( fullDir .. "/" .. v .. ".lua" )
+				end
+
+				if v == "client" or v == "shared" then
+					AddCSLuaFile( fullDir .. "/" .. v .. ".lua" )
+				end
+			end
+		end
+	end
 
 	function SF.Libraries.LoadAll ()
 		local function loadLib( lib )
@@ -712,7 +727,7 @@ if SERVER then
 
 				for _, v in pairs( libraryJSON.dependencies ) do
 					if v == lib then
-						print( "Attempt to load '" .. lib .. "' recursivley" )
+						print( "Attempted to load '" .. lib .. "' recursivley" )
 
 						libLoaded[ lib ] = false
 						return false
@@ -731,19 +746,29 @@ if SERVER then
 				end
 			end
 
-			print( "- Loading library: " .. lib )
+			local files, dirs = file.Find( fullDir .. "/*", "LUA" )
+			for _, dir in pairs( dirs ) do
+				local hasFiles = false
 
-			for _, v in pairs{ "shared", "server", "client" } do
-				if file.Exists( fullDir .. "/" .. v .. ".lua", "LUA" ) then
-					if v == "server" or v == "shared" then
-						include( fullDir .. "/" .. v .. ".lua" )
-					end
-
-					if v == "client" or v == "shared" then
-						AddCSLuaFile( fullDir .. "/" .. v .. ".lua" )
+				for _, v in pairs( { "shared", "server", "client" } ) do
+					if file.Exists( fullDir .. "/" .. dir .. "/" .. v .. ".lua", "LUA" ) then
+						hasFiles = true
+						break
 					end
 				end
+
+				if hasFiles then
+					if not libSoftDepend[ dir ] then
+						libSoftDepend[ dir ] = {}
+					end
+
+					table.insert( libSoftDepend[ dir ], lib )
+				end
 			end
+
+			print( "-  Loading '" .. lib .. "'" )
+
+			loadDir( fullDir )
 
 			libLoaded[ lib ] = true
 			return true
@@ -751,9 +776,21 @@ if SERVER then
 
 		MsgN( "-SF - Loading Libraries" )
 
+		print( "- Loading core library files" )
 		local _, dirs = file.Find( "starfall/libraries/*", "LUA" )
 		for _, libName in pairs( dirs ) do
 			loadLib( libName )
+		end
+
+		print( "- Loading soft dependencies" )
+
+		for lib, _ in pairs( libLoaded ) do
+			if libSoftDepend[ lib ] then
+				print( "-  Loading '" .. lib .. "'" )
+				for _, v in pairs( libSoftDepend[ lib ] ) do
+					loadDir( "starfall/libraries/" .. v .. "/" .. lib )
+				end
+			end
 		end
 
 		MsgN( "-End Loading SF Libraries" )
@@ -768,6 +805,14 @@ else
 		libData = net.ReadTable( )
 		SF.Libraries.LoadAll()
 	end )
+
+	local function loadDir( fullDir )
+		for _, v in pairs{ "shared", "client" } do
+			if file.Exists( fullDir .. "/" .. v .. ".lua", "LUA" ) then
+				include( fullDir .. "/" .. v .. ".lua" )
+			end
+		end
+	end
 
 	function SF.Libraries.LoadAll ()
 		local function loadLib( lib )
@@ -796,13 +841,17 @@ else
 				end
 			end
 
-			print( "- Loading library: " .. lib )
-
-			for _, v in pairs{ "shared", "client" } do
-				if file.Exists( fullDir .. "/" .. v .. ".lua", "LUA" ) then
-					include( fullDir .. "/" .. v .. ".lua" )
+			local files, dirs = file.Find( fullDir .. "/*", "LUA" )
+			for _, dir in pairs( dirs ) do
+				if not libSoftDepend[ dir ] then
+					libSoftDepend[ dir ] = {}
 				end
+				table.insert( libSoftDepend[ dir ], lib )
 			end
+
+			print( "-  Loading '" .. lib .. "'" )
+
+			loadDir( fullDir )
 
 			libLoaded[ lib ] = true
 			return true
@@ -810,9 +859,21 @@ else
 
 		MsgN( "-SF - Loading Libraries" )
 
+		print( "- Loading core library files" )
 		local _, dirs = file.Find( "starfall/libraries/*", "LUA" )
 		for _, libName in pairs( dirs ) do
 			loadLib( libName )
+		end
+
+		print( "- Loading soft dependencies" )
+
+		for lib, _ in pairs( libLoaded ) do
+			if libSoftDepend[ lib ] then
+				print( "-  Loading '" .. lib .. "'" )
+				for _, v in pairs( libSoftDepend[ lib ] ) do
+					loadDir( "starfall/libraries/" .. v .. "/" .. lib )
+				end
+			end
 		end
 
 		MsgN( "-End Loading SF Libraries" )
