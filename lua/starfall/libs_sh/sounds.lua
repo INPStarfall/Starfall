@@ -127,7 +127,7 @@ function sound_methods:isPlaying ()
 end
 
 --- Sets the sound level in dB.
--- @param level dB level, see <a href='https://developer.valvesoftware.com/wiki/Soundscripts#SoundLevel'> Vale Dev Wiki</a>, for information on the value to use.
+-- @param level dB level, see <a href='https://developer.valvesoftware.com/wiki/Soundscripts#SoundLevel'> Valve Dev Wiki</a>, for information on the value to use.
 function sound_methods:setSoundLevel ( level )
 	if not SF.Permissions.check( SF.instance.player, unwrap( self ), "sound.modify" ) then SF.throw( "Insufficient permissions", 2 ) end
 	SF.CheckType( level, "number" )
