@@ -403,7 +403,7 @@ function ents_methods:setSubMaterial ( index, material )
     local ent = unwrap( self )
     if not isValid( ent ) then return nil, "invalid entity" end
     ent:SetSubMaterial( index - 1, material )
-    return ent
+    return self
 end
 
 --- Sets an entities' bodygroup
