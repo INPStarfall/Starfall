@@ -87,8 +87,9 @@ function hook_library.runRemote ( recipient, ... )
 		res = { k:runScriptHookForResult( "remote", SF.WrapObject( instance.data.entity ), SF.WrapObject( instance.player ), ... ) }
 
 		local ok = table.remove( res, 1 )
+
+		if not res[ 1 ] then continue end -- Call failed because of non-existent hook. Ignore
 		if not ok then
-			if not res[ 1 ] then continue end -- Call failed because of non-existent hook. Ignore
 			k:Error( "Hook 'remote' errored with " .. res[ 1 ], res[ 2 ] )
 			-- Their fault - don't return
 		else
