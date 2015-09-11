@@ -19,6 +19,7 @@ local ents_lib, _ = SF.Libraries.Register( "entities" )
 do
 	local P = SF.Permissions
 	P.registerPrivilege( "entities.setColor", "Set Color", "Allows the user to change the color of an entity" )
+	P.registerPrivilege( "entities.setSubMaterial", "Set SubMaterial", "Allows the user to change a specific SubMaterial of an entity" )
 end
 
 local materialBlacklist = {
@@ -374,6 +375,36 @@ function ents_methods:setMaterial ( material )
     if not isValid( ent ) then return nil, "invalid entity" end
     ent:SetMaterial( material )
     return wrap( ent )
+end
+
+function ents_methods:getMaterials ()
+	local ent = unwrap( self )
+	if not isValid( ent ) then return nil, "invalid entity" end
+	return SF.Sanitize( ent:GetMaterials() )
+end
+
+function ents_methods:getSubMaterial ( ind )
+	SF.CheckType( ind, "number" )
+
+	local ent = unwrap( self )
+	if not isValid( ent ) then return nil, "invalid entity" end
+	return ent:GetSubMaterial( ind - 1 ) or ""
+end
+
+function ents_methods:setSubMaterial ( ind, mat )
+	-- If both are nil, it acts as a reset
+	if ind ~= nil and mat ~= nil then
+		SF.CheckType( ind, "number" )
+		SF.CheckType( mat, "string" )
+	end
+
+	local ent = unwrap( self )
+	if not isValid( ent ) then return nil, "invalid entity" end
+
+	if not SF.Permissions.check( SF.instance.player, ent, "entities.setSubMaterial" ) then return end
+	if materialBlacklist[ mat ] then SF.throw( "Material: " .. ( mat or "" ) .. " is blacklisted!", 2 ) end
+
+	ent:SetSubMaterial( ind and ind - 1 or nil, mat )
 end
 
 --- Sets an entities' bodygroup
