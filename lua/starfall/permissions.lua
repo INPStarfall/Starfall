@@ -8,7 +8,10 @@ P.__index = P
 
 P.nodes = {}
 
+P.AdminMod = CreateConVar( "sf_adminmod", "", { FCVAR_ARCHIVE }, "The name of the adminmod to use for starfall permissions" )
+
 local providers = {}
+local adminMod = {}
 
 --- Adds a provider implementation to the set used by this library.
 -- Providers must implement the {@link SF.Permissions.Provider} interface.
@@ -41,9 +44,18 @@ function P.registerNode ( nodeID, nodeTable )
 		node.children = {}
 		for k, v in pairs( nodeTable.children ) do
 			node.children[ nodeID .. "." .. k ] = true
+
 			v.parent = nodeID
+			if v.default == nil then
+				v.default = node.default
+			end
+
 			P.registerNode( nodeID .. "." .. k, v )
 		end
+	end
+
+	if adminMod.registerNode then
+		adminMod.registerNode( nodeID, nodeTable )
 	end
 end
 
@@ -51,23 +63,43 @@ end
 -- @param player The player to check
 -- @param nodeID The string that identifies the node
 function P.hasNode ( player, nodeID )
-	--TODO: Allow users to override this function depending on admin mod
-	local node = P.nodes[ nodeID ]
-	if not node then return false end
-
-	if node.default ~= nil then
-		if node.default == true then
-			return true
-		elseif node.default == "owner" then
-			return player:IsSuperAdmin( )
-		else
-			return false
-		end
-	elseif node.parent then
-		return P.hasNode( player, node.parent )
-	else
-		return false
+	local ret
+	if hasNodeOverride then
+		ret = hasNodeOverride( player, nodeID )
 	end
+
+	if ret == nil then
+		local node = P.nodes[ nodeID ]
+		if not node then return false end
+
+		if node.default ~= nil then
+			if node.default == true then
+				ret = true
+			elseif node.default == "owner" then
+				ret =  player:IsSuperAdmin( )
+			else
+				ret =  false
+			end
+		elseif node.parent then
+			ret =  P.hasNode( player, node.parent )
+		else
+			ret =  false
+		end
+	end
+
+	return ret
+end
+
+--- Overrides the hasNode function
+-- @param adminModTable The admin mod table
+function P.registerAdminMod( adminModTable )
+	if type( adminModTable ) ~= "table"
+			or ( adminModTable.hasNode and type( adminModTable.hasNode ) ~= "function" )
+			or ( adminModTable.registerNode and type( adminModTable.registerNode ) ~= "function" ) then
+		error( "given object does not implement the admin mod interface", 2 )
+	end
+
+	adminMod = adminModTable
 end
 
 --- Checks whether a player may perform an action.
@@ -139,6 +171,17 @@ end
 
 hook.Add( "sf_libs_loaded", "starfall_load_permissions", function ()
 	local _, dirs = file.Find( "starfall/libraries/*", "LUA" )
+
+	if SERVER and P.AdminMod:GetString() ~= "" then
+		if file.Exists( "starfall/permissions/" .. P.AdminMod:GetString() .. ".lua", "LUA" ) then
+			include( "starfall/permissions/" .. P.AdminMod:GetString() .. ".lua" )
+			AddCSLuaFile( "starfall/permissions/" .. P.AdminMod:GetString() .. ".lua" )
+		end
+	elseif CLIENT then
+		for _, file in pairs( file.Find( "starfall/permissions/*.lua", "LUA" ) ) do
+			include( "starfall/permissions/" .. file )
+		end
+	end
 
 	for _, dir in pairs( dirs ) do
 		if SF.Libraries.wasLoaded( dir ) then
