@@ -593,6 +593,43 @@ function wirelink_methods:isWired ( name )
 	else return false end
 end
 
+--- Returns the wirelink for that entity
+function SF.Types.Entity.__methods:wirelink ()
+	local entType = SF.GetTypeDef( "Entity" )
+	SF.CheckType( self, entType )
+	local ent = entType.__unwrap( self )
+
+	if not SF.Permissions.check( SF.instance.player, ent, "wire.createWire" ) then SF.throw( "Insufficient permissions", 2 ) end
+
+	if ent.Outputs then
+		local names = {}
+		local types = {}
+		local descs = {}
+		local x = 0
+		for k,v in pairs( ent.Outputs ) do
+			x = x + 1
+			local num = v.Num
+			names[ num ] = v.Name
+			if v.Name == "wirelink" then return wlwrap( ent ) end -- we already have a wirelink output, abort
+			types[ num ] = v.Type
+			descs[ num ] = v.Desc
+		end
+
+		names[ x + 1 ] = "wirelink"
+		types[ x + 1 ] = "WIRELINK"
+		descs[ x + 1 ] = ""
+
+		WireLib.AdjustSpecialOutputs( ent, names, types, descs )
+	else
+		WireLib.CreateSpecialOutputs( ent, { "wirelink" }, { "WIRELINK" } )
+	end
+
+	ent.extended = true
+	WireLib.TriggerOutput( ent, "wirelink", ent )
+
+	return wlwrap( ent )
+end
+
 -- ------------------------- Ports Metatable ------------------------- --
 local wire_ports_methods, wire_ports_metamethods = SF.Typedef( "Ports" )
 
