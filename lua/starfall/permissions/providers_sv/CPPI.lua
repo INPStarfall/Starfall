@@ -14,7 +14,8 @@ local canTool = {
 	[ "entities.setColor" ] = true,
 	[ "entities.setSubMaterial" ] = true,
 	[ "wire.createWire" ] = true,
-	[ "wire.deleteWire" ] = true
+	[ "wire.deleteWire" ] = true,
+	[ "constraint.any" ] = true
 }
 
 local canPhysgun = {
