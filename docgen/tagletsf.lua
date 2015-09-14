@@ -95,7 +95,7 @@ local function check_library ( line )
 	end
 
 	-- Local library
-	local tblref, name = line:match( "^%s*local%s+([%w_]+).-=%s*SF%.Libraries%.RegisterLocal%(\"([^\"]+)\".-%)$" )
+	local tblref, name = line:match( "^%s*local%s+([%w_]+).-=%s*SF%.Libraries%.RegisterLocal%(%s*\"([^\"]+)\".-%)$" )
 	return name, tblref
 end
 
