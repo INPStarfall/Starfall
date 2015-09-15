@@ -1,0 +1,6 @@
+{
+	"trace" : {
+		"description" : "Allows the user to have access to the trace library",
+		"default" : true
+	}
+}

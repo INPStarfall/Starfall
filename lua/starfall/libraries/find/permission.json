@@ -1,0 +1,6 @@
+{
+	"find" : {
+		"description" : "Allows the user to access the find library",
+		"default" : true
+	}
+}

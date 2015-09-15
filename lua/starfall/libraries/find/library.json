@@ -1,0 +1,6 @@
+{
+	"name" : "find",
+	"description" : "Find library. Finds entities in various shapes.",
+	"dependencies" : [ "entity" ],
+	"version" : ""
+}

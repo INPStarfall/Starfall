@@ -1,0 +1,6 @@
+{
+	"name" : "entity",
+	"description" : "Entity library",
+	"dependencies" : [ "angle", "color", "vector" ],
+	"version" : "INP"
+}

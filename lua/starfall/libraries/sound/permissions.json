@@ -1,0 +1,19 @@
+{
+	"sound" : {
+		"description" : "Allows the user to access to all of the sound library",
+		"children" : {
+			"create" : {
+				"description" : "Allows the user to create sounds",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"modify" : {
+				"description" : "Allows the user to modify sounds",
+				"default" : true
+			}
+		}
+	}
+}

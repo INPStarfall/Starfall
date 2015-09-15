@@ -1,0 +1,6 @@
+{
+	"name" : "sound",
+	"description" : "Sound library.",
+	"dependencies" : [ "entity" ],
+	"version" : "INP"
+}

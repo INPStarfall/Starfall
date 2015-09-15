@@ -1,0 +1,104 @@
+{
+	"entity" : {
+		"description" : "Grants access to all entity permissions",
+		"children" : {
+			"setColor" : {
+				"description" : "Allows the user to change the color of an entity",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"setSubMaterial" : {
+				"description" : "Allows the user to change the subMaterial of an entity",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"parent" : {
+				"description" : "Allows the user to set the parent of an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"unparent" : {
+				"description" : "Allows the user to remove the parent of an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"applyForce" : {
+				"description" : "Allows the user to apply force to an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"setPos" : {
+				"description" : "Allows the user to set the position of an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"setAngles" : {
+				"description" : "Allows the user to set the angles of an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"setVelocity" : {
+				"description" : "Allows the user to set the velocity of an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"setFrozen" : {
+				"description" : "Allows the user to (un)freeze an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"setSolid" : {
+				"description" : "Allows the user to set the solidity of an entity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			},
+			"enableGravity" : {
+				"description" : "Allows the user to change whether an entity is affected by gravity",
+				"locale" : "server",
+				"children" : {
+					"self" : { "default" : true },
+					"buddy" : { "default" : true },
+					"other" : { "default" : "owner" }
+				}
+			}
+		}
+	}
+}
