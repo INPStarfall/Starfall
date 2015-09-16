@@ -600,9 +600,12 @@ if SERVER then
 	--@param ply Player that errored, so we can clear their uploaddata for them to try again. If ply is the err cause, function will skip uploaddata clearing.
 	--@local
 	local function errMaking ( msg, ply )
-		if ply then uploaddata[ ply ] = nil end
+		if ply then
+			uploaddata[ ply ] = nil
+			SF.AddNotify( ply, "[ SPAWN ERROR ] " .. msg, NOTIFY_ERROR, 4, NOTIFYSOUND_ERROR1 )
+		end
+
 		error( msg )
-	
 	end
 
 	--- Creates a SF of the given type.
@@ -618,19 +621,21 @@ if SERVER then
 		-- Sanity checks
 		if not IsValid( ply ) then errMaking( "Invalid player during spawning" ) end
 
-		if type( typ ) ~= "string" or typ == "" or not acceptable_types[ typ ] then
-			errMaking( "Cannot make a Starfall of that type: " .. tostring( typ ) )
+		if type( typ ) ~= "string" or typ == "" then
+			errMaking( "Cannot make a Starfall of that type", ply )
+		elseif not acceptable_types[ typ ] then
+			errMaking( "Cannot make a Starfall of type: " .. typ, ply )
 		end
 
-		if not trace then errMaking( "No trace data for " .. typ .. " specified!" ) end
+		if not trace then errMaking( "No trace data for " .. acceptable_types[ typ ] .. " specified!", ply ) end
 
-		if not model or model == "" then errMaking( "Cannot create a " .. typ .." without a model!" ) end
+		if not model or model == "" then errMaking( "Cannot create a " .. acceptable_types[ typ ] .." without a model!", ply ) end
 
 		-- CheckLimit throws its own error, so just return
 		if not ply:CheckLimit( typ ) then return end
 
 		local sf = ents.Create( typ )
-		if not IsValid( sf ) then errMaking( "Error occurred with creating entity: " .. typ ) end
+		if not IsValid( sf ) then errMaking( "Error occurred with creating entity: " .. acceptable_types[ typ ], ply ) end
 
 		local ang = trace.HitNormal:Angle()
 		ang.pitch = ang.pitch + 90
