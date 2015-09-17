@@ -83,12 +83,15 @@ function TOOL:LeftClick ( trace )
 
 	if not self:GetSWEP():CheckLimit( "starfall_screen" ) then return false end
 
-	local sf = SF.MakeSF( ply, "starfall_screen", trace, self:GetClientInfo( "Model" ) )
 
 	if not SF.RequestCode( ply, function ( mainfile, files )
 		if not mainfile then return end
+
+		local sf = SF.MakeSF( ply, "starfall_screen", trace, self:GetClientInfo( "Model" ) )
+
 		if not IsValid( sf ) then return end
 		sf:CodeSent( ply, files, mainfile )
+
 	end ) then
 		SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 	end
