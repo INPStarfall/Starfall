@@ -318,6 +318,22 @@ function holograms_library.create ( pos, ang, model, scale )
             holoent:SetScale( scale )
         end
 
+		-- Lots of ownership stuff
+		-- Old but still supported officially
+		holoent.owner = instance.player
+
+		-- Questionable use cases
+		-- Based on: https://github.com/garrynewman/garrysmod/blob/master/garrysmod/lua/includes/extensions/entity.lua#L53
+		holoent:SetVar( "Player", instance.player )
+		holoent:SetVar( "Owner", instance.player )
+
+		-- Directly set CPPI Owner incase PP doesn't hook onto any of the above.
+		-- As we're not using things such as AddCleanup which is a common 'hook' for PP systems.
+		-- CPPI docs: http://ulyssesmod.net/archive/CPPI_v1-3.pdf
+		if CPPI and holoent.CPPISetOwner then
+			holoent:CPPISetOwner( instance.player )
+		end
+
         local holo = SF.Entities.Wrap( holoent )
 
         holodata.holos[ holo ] = holo

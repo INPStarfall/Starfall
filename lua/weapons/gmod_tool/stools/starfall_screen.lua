@@ -8,7 +8,6 @@ TOOL.Tab			= "Wire"
 -- ------------------------------- Sending / Recieving ------------------------------- --
 include( "starfall/sflib.lua" )
 
-local MakeSF
 local RequestSend
 
 TOOL.ClientConVar[ "Model" ] = "models/hunter/plates/plate2x2.mdl"
@@ -53,24 +52,6 @@ if SERVER then
 	end
 	
 	CreateConVar( "sbox_maxstarfall_screen", 3, { FCVAR_REPLICATED, FCVAR_NOTIFY, FCVAR_ARCHIVE } )
-	
-	function MakeSF ( pl, Pos, Ang, model)
-		if not pl:CheckLimit( "starfall_screen" ) then return false end
-
-		local sf = ents.Create( "starfall_screen" )
-		if not IsValid( sf ) then return false end
-
-		sf:SetAngles( Ang )
-		sf:SetPos( Pos )
-		sf:SetModel( model )
-		sf:Spawn()
-
-		sf.owner = pl
-
-		pl:AddCount( "starfall_screen", sf )
-
-		return sf
-	end
 else
 	language.Add( "Tool.starfall_screen.name", "Starfall - Screen" )
 	language.Add( "Tool.starfall_screen.desc", "Spawns a starfall screen" )
@@ -100,31 +81,17 @@ function TOOL:LeftClick ( trace )
 	
 	self:SetStage( 0 )
 
-	local model = self:GetClientInfo( "Model" )
 	if not self:GetSWEP():CheckLimit( "starfall_screen" ) then return false end
 
-	local Ang = trace.HitNormal:Angle()
-	Ang.pitch = Ang.pitch + 90
 
-	local sf = MakeSF( ply, trace.HitPos, Ang, model )
-
-	local min = sf:OBBMins()
-	sf:SetPos( trace.HitPos - trace.HitNormal * min.z )
-
-	local const = WireLib.Weld( sf, trace.Entity, trace.PhysicsBone, true )
-
-	undo.Create( "Starfall Screen" )
-		undo.AddEntity( sf )
-		undo.AddEntity( const )
-		undo.SetPlayer( ply )
-	undo.Finish()
-
-	ply:AddCleanup( "starfall_screen", sf )
-	
 	if not SF.RequestCode( ply, function ( mainfile, files )
 		if not mainfile then return end
+
+		local sf = SF.MakeSF( ply, "starfall_screen", trace, self:GetClientInfo( "Model" ) )
+
 		if not IsValid( sf ) then return end
 		sf:CodeSent( ply, files, mainfile )
+
 	end ) then
 		SF.AddNotify( ply, "Cannot upload SF code, please wait for the current upload to finish.", NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 	end
