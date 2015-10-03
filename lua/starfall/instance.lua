@@ -7,6 +7,22 @@
 SF.Instance = {}
 SF.Instance.__index = SF.Instance
 
+SF.Instance.sethook = {}
+SF.Instance.sethook.counter = 0
+SF.Instance.sethook.set = function ( func, mask, count )
+	if SF.Instance.sethook.counter == 0 then
+		debug.sethook( func, mask, count )
+	end
+end
+
+SF.Instance.sethook.clear = function ()
+	if SF.Instance.sethook.counter == 0 then
+		debug.sethook( nil )
+	end
+end
+-- Prevent further writing of indexes to this table.
+setmetatable( SF.Instance.sethook, { __newindex = function() return end } )
+
 --- Instance fields
 -- @name Instance
 -- @class table
@@ -67,9 +83,13 @@ function SF.Instance:runWithOps ( func, ... )
 		return ret
 	end
 
-	debug.sethook( cpuCheck, "", 500 )
+	SF.Instance.sethook.set( cpuCheck, "", 500 )
+	SF.Instance.sethook.counter = SF.Instance.sethook.counter + 1
+
 	local ok, rt = xpcall( wrapperfunc, xpcall_callback )
-	debug.sethook( nil )
+
+	SF.Instance.sethook.counter = SF.Instance.sethook.counter - 1
+	SF.Instance.sethook.clear()
 
 	if ok then
 		return true, rt
