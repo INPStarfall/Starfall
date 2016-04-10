@@ -102,6 +102,8 @@ function SF.throw ( msg, level, uncatchable )
 	error( err )
 end
 
+local real_type = function () end
+
 --- Creates a type that is safe for SF scripts to use. Instances of the type
 -- cannot access the type's metatable or metamethods.
 -- @param name Name of table
@@ -116,6 +118,8 @@ function SF.Typedef ( name, supermeta )
 	metamethods.__methods = methods
 
 	metamethods.__supertypes = { [ metamethods ] = true }
+
+	metamethods.__realType = real_type
 	
 	if supermeta then
 		setmetatable( methods, { __index = supermeta.__index } )
@@ -192,7 +196,7 @@ function SF.CheckType ( val, typ, level, default )
 	elseif type( val ) == typ then return val
 	else
 		local meta = dgetmeta( val )
-		if meta == typ or ( meta and meta.__supertypes and meta.__supertypes[ typ ] ) then return val end
+		if meta == typ or ( meta and meta.__supertypes and meta.__supertypes[ typ ] and meta.__realType == real_type ) then return val end
 		
 		-- Failed, throw error
 		level = ( level or 0 ) + 3
