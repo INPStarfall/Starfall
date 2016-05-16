@@ -294,6 +294,8 @@ function SF.DefaultEnvironment.loadstring ( str )
 	return func
 end
 
+local SF_Methods = {}
+
 --- Lua's setfenv
 -- Works like setfenv, but is restricted on functions
 -- @param func Function to change environment of
@@ -301,6 +303,7 @@ end
 -- @return func with environment set to tbl
 function SF.DefaultEnvironment.setfenv ( func, tbl )
 	if type( func ) ~= "function" then SF.throw( "Main Thread is protected!", 2 ) end
+	if SF_Methods[ func ] then SF.throw( "SF methods are protected.", 2 ) end
 	return setfenv( func, tbl )
 end
 
@@ -380,6 +383,17 @@ end
 
 SF.Libraries.AddHook( "prepare", restrict )
 SF.Libraries.AddHook( "cleanup", unrestrict )
+
+-- Creates a list of all the methods used in SF to blacklist in setfenv
+SF.Libraries.AddHook( "postload", function ( ... ) 
+	for _, tbl in pairs( SF.Types ) do
+		for _, method in pairs( tbl.__methods ) do
+			if type( method ) == "function" then
+				SF_Methods[ method ] = true
+			end
+		end
+	end
+end )
 
 -- ------------------------- Hook Documentation ------------------------- --
 
