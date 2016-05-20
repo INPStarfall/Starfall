@@ -3,7 +3,7 @@
 -- Any derma added should not have anything to do with SF.Editor table apart from design elements e.g. colours, icons
 
 -- Starfall Frame
-PANEL = {}
+local PANEL = {}
 
 PANEL.windows = {}
 
