@@ -73,7 +73,7 @@ function SF.Instance:runWithOps ( func, ... )
 
 		if self.cpuTime:getBufferAverage() > SF.cpuQuota:GetFloat() then
 			debug.sethook( nil )
-			SF.throw( "CPU Quota exceeded.", 0, true )
+			SF.throw( "CPU Quota Exceeded!", 0, true )
 		end
 
 		oldSysTime = SysTime()
