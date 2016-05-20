@@ -75,6 +75,8 @@ function SF.Instance:runWithOps ( func, ... )
 			debug.sethook( nil )
 			SF.throw( "CPU Quota exceeded.", 0, true )
 		end
+
+		oldSysTime = SysTime()
 	end
 
 	local wrapperfunc = function ()
