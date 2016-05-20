@@ -3,7 +3,7 @@
 -- Any derma added should not have anything to do with SF.Editor table apart from design elements e.g. colours, icons
 
 -- Starfall Frame
-PANEL = {}
+local PANEL = {}
 
 PANEL.windows = {}
 
@@ -692,7 +692,9 @@ function PANEL:openMenu ( node )
 				function ( text )
 					if text == "" then return end
 					text = string.gsub( text, ".", invalid_filename_chars )
-					local saveFile = "starfall/"..text..".txt"
+
+					local saveFile = string.GetPathFromFilename( node:GetFileName() ) .. text .. ".txt"
+
 					local contents = file.Read( node:GetFileName() )
 					file.Delete( node:GetFileName() )
 					file.Write( saveFile, contents )
