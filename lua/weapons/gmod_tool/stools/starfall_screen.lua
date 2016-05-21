@@ -136,7 +136,8 @@ if CLIENT then
 		end
 
 		local tool = get_active_tool( LocalPlayer(), "starfall_screen" )
-		if tool then
+		-- For some reason == nil doesn't return true. Because the function actually returns NULL when a player is NOT driving.
+		if tool and LocalPlayer():GetVehicle() == NULL then
 			local model = tool:GetClientInfo( "Model" )
 			if model and model ~= "" and modelHologram:GetModel() ~= model then
 				modelHologram:SetModel( model )
