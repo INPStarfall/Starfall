@@ -114,7 +114,7 @@ SF.DefaultEnvironment.SERVER = SERVER
 -- If used on screens, will show 0 if only rendering is done. Operations must be done in the Think loop for them to be counted.
 -- @return Current quota used this Think
 function SF.DefaultEnvironment.quotaUsed ()
-	return SF.instance.cpuTime.current
+	return SF.instance.cpuTime.buffer[ SF.instance.cpuTime.bufferI ]
 end
 
 --- Gets the Average CPU Time in the buffer
