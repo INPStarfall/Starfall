@@ -65,13 +65,26 @@ function SF.Instance:runWithOps ( func, ... )
 
 	local oldSysTime = SysTime()
 
+	-- http://www.usablestats.com/calcs/tinv
+	-- Degrees of Freedom = BufferN - 1
+	-- One-sided
+	-- Proportion of Area = 1 - x where x is a percentage that represents a level of significance. 
+	-- A higher significance means it is harder to quota but you are more sure that the limit has been exceeded.
+	-- A lower significance means it is easier to quota but you are less sure that the limit has been exceeded.
+	-- The default value for x is 0.99
+	local criticalValue = 2.4528
+
 	local function cpuCheck ()
 		local dt = SysTime() - oldSysTime
 
 		local ind = self.cpuTime.bufferI
 		self.cpuTime.buffer[ ind ] = ( self.cpuTime.buffer[ ind ] or 0 ) + dt
 
-		if self.cpuTime:getBufferAverage() > SF.cpuQuota:GetFloat() then
+		local average = self.cpuTime:getBufferAverage()
+		local variance = self.cpuTime:getBufferVariance( average )
+		local testStatistic = ( average - SF.cpuQuota:GetFloat() ) / math.sqrt( variance / self.context.cpuTime:getBufferN() )
+
+		if testStatistic > criticalValue or average > 1.4 * SF.cpuQuota:GetFloat() then
 			debug.sethook( nil )
 			SF.throw( "CPU Quota Exceeded!", 0, true )
 		end
@@ -140,6 +153,18 @@ function SF.Instance:initialize ()
 			r = r + v
 		end
 		return r / ins.context.cpuTime:getBufferN()
+	end
+
+	-- Unbiased estimator of variance since we are using a sample of last BufferN cpuTimes
+	function self.cpuTime:getBufferVariance ( average )
+		local average = average or self.getBufferAverage()
+		local sum = 0
+
+		for _, v in pairs( self.buffer ) do
+			sum = sum + (v - average) ^ 2
+		end
+
+		return sum / ( ins.context.cpuTime:getBufferN() - 1 )
 	end
 
 	self:runLibraryHook( "initialize" )
