@@ -6,6 +6,7 @@ local util = require "luadoc.util"
 local string = require "string"
 local table = require "table"
 local assert, type, tostring = assert, type, tostring
+local ipairs = ipairs
 
 module "tagletsftags"
 
@@ -110,11 +111,12 @@ local function param (tag, block, text)
 		return
 	end
 	
-	i = table.foreachi(block[tag], function (i, v)
+	for k, v in ipairs( block[ tag ] ) do
 		if v == name then
-			return i
+			i = k
+			break
 		end
-	end)
+	end
 	
 	if i == nil then
 		if not block.classForced then
@@ -156,9 +158,9 @@ local function see (tag, block, text)
 	
 	local s = util.split("%s*,%s*", text)			
 	
-	table.foreachi(s, function (_, v)
+	for _, v in ipairs( s ) do
 		table.insert(block[tag], v)
-	end)
+	end
 end
 
 -------------------------------------------------------------------------------
