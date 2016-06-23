@@ -149,6 +149,7 @@ function ents_methods:setParent ( ent )
 	this:SetParent( ent )
 end
 
+--- Unparents the called entity.
 function ents_methods:unparent ()
 	local this = unwrap( self )
 	if not SF.Permissions.check( SF.instance.player, this, "entities.unparent" ) then SF.throw( "Insufficient permissions", 2 ) end
