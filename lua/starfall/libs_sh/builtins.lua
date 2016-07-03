@@ -201,6 +201,47 @@ function SF.DefaultEnvironment.getLibraries ()
 	return ret
 end
 
+--- Local type checking function for the iter function.
+-- @param typ The Starfall Library or Type to check.
+-- @throws Error should the input typ not be a valid Starfall Library or Type.
+local function iterCheckType ( typ )
+    local meta = dgetmeta( typ )
+    if not (
+    meta and meta.__metatable
+            and type( meta.__metatable ) == "string" and SF.GetTypeDef( meta.__metatable )
+            and meta.__realType and meta.__realType == SF.GetTypeDef( meta.__metatable ).__realType
+    ) then
+        SF.throw( "iter: Invalid Library or Type", 3 )
+    end
+end
+
+--- Used the same as Lua's pairs but iterates over the given library's or type's default fields
+-- @param typ The Starfall Library or Type to iterate over
+-- @usage
+-- \-- Default Environment, would also work with getfenv()
+--
+-- for k, v in iter( _G ) do
+-- \   -- CODE
+-- end
+--
+-- \-- or for example:
+--
+-- for k, v in iter( render ) do
+-- \   -- CODE
+-- end
+function SF.DefaultEnvironment.iter ( typ )
+	SF.CheckType( typ, "table" )
+
+	iterCheckType( typ )
+
+	local nxt = function ( t, index )
+		iterCheckType( t )
+		local meta = dgetmeta( t )
+		return next( meta.__methods, index )
+	end
+
+	return nxt, typ, nil
+end
 
 
 if SERVER then
