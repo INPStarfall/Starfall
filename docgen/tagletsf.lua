@@ -11,6 +11,7 @@ local string = require "string"
 local table = require "table"
 
 local print = print
+local ipairs = ipairs
 
 module 'tagletsf'
 
@@ -60,16 +61,18 @@ local function_patterns = {
 local function check_function (line)
 	line = util.trim(line)
 
-	local info = table.foreachi(function_patterns, function (_, pattern)
+	local info = nil
+	for _, pattern in ipairs( function_patterns ) do
 		local r, _, l, id, param = string.find(line, pattern)
 		if r ~= nil then
-			return {
+			info = {
 				name = id,
 				private = (l == "local"),
 				param = util.split("%s*,%s*", param),
 			}
+			break
 		end
-	end)
+	end
 
 	-- TODO: remove these assert's?
 	if info ~= nil then
@@ -166,7 +169,8 @@ end
 local function parse_comment ( block, first_line, libs, classes )
 
 	-- get the first non-empty line of code
-	local code = table.foreachi(block.code, function(_, line)
+	local code = nil
+	for _, line in ipairs( block.code ) do
 		if not util.line_empty(line) then
 			-- `local' declarations are ignored in two cases:
 			-- when the `nolocals' option is turned on; and
@@ -174,11 +178,13 @@ local function parse_comment ( block, first_line, libs, classes )
 			--	necessary to avoid confusion between the top
 			--	local declarations and the `module' definition.
 			if (options.nolocals or first_line) and line:find"^%s*local" then
-				return
+				--return
+			else
+				code = line
+				break
 			end
-			return line
 		end
-	end)
+	end
 	
 	-- parse first line of code
 	if code ~= nil then
@@ -216,7 +222,7 @@ local function parse_comment ( block, first_line, libs, classes )
 	local currenttag = "description"
 	local currenttext
 	
-	table.foreachi(block.comment, function (_, line)
+	for _, line in ipairs( block.comment ) do
 		line = util.trim_comment(line)
 		
 		local r, _, tag, text = string.find( line, "^@([_%w%.]+)%s*(.*)" )
@@ -232,7 +238,7 @@ local function parse_comment ( block, first_line, libs, classes )
 			currenttext = util.concat( currenttext, "\n" .. line )
 			assert(string.sub(currenttext, 1, 1) ~= " ", string.format("`%s', `%s'", currenttext, line))
 		end
-	end)
+	end
 	tags.handle(currenttag, block, currenttext)
 	
 	-- Add library to table
@@ -480,11 +486,13 @@ end
 
 function file (filepath, doc)
 	local patterns = { "%.lua$", "%.luadoc$" }
-	local valid = table.foreachi(patterns, function (_, pattern)
+	local valid = nil
+	for _, pattern in ipairs( patterns ) do
 		if string.find(filepath, pattern) ~= nil then
-			return true
+			valid = true
+			break
 		end
-	end)
+	end
 	
 	if valid then
 		logger:info(string.format("processing file `%s'", filepath))
@@ -550,8 +558,8 @@ function start (files, doc)
 	assert( doc.hooks, "undefined `hooks' field" )
 	assert( doc.directives, "undefined `directives' field" )
 	assert( doc.classes, "undefined `classes' field" )
-	
-	table.foreachi(files, function (_, path)
+
+	for _, path in ipairs( files ) do
 		local mode, err = lfs.attributes(path, "mode")
 		assert(mode, string.format("error stating path '%s': %s", path, err or "unknown error"))
 		
@@ -562,7 +570,7 @@ function start (files, doc)
 		else
 			error(string.format("error stating path '%s': unknown file mode", path))
 		end
-	end)
+	end
 	
 	-- order arrays alphabetically
 	recsort( doc.files )
