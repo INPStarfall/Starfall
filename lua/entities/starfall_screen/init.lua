@@ -127,8 +127,8 @@ function ENT:CodeSent (ply, files, mainfile)
 		
 		if not self.instance then return end
 		
-		local _, _, _, a = self:GetColor()
-		self:SetColor( Color( 255, 255, 255, a ) )
+		local col = self:GetColor()
+		self:SetColor( Color( 255, 255, 255, col.a ) )
 		self.sharedscreen = true
 	end
 end
