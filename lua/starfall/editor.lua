@@ -583,7 +583,8 @@ if CLIENT then
 		end
 		function textPanel:OnTextChanged ()
 			if not ( ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) and input.IsKeyDown( KEY_SPACE ) ) and 
-				not ( input.IsKeyDown( KEY_LALT ) and not ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) ) then
+				not ( input.IsKeyDown( KEY_LALT ) and not ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) ) and
+				self:GetText():len() > 0 then
 				html:Call( "editor.keyBinding.onTextInput( '" .. self:GetText():JavascriptSafe() .. "' )" )
 			end
 			self:SetText( "" )
