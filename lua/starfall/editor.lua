@@ -1206,9 +1206,11 @@ if CLIENT then
 		searchTextEntry:Dock( FILL )
 		searchTextEntry:DockMargin( 0, 0, 3, 0 )
 		searchTextEntry:SetValue( "Search for" )
-		searchTextEntry:SetTooltip( "Next: Enter, Previous: Ctrl-Enter" )
+		searchTextEntry:SetTooltip( "Next: Enter, Previous: Shift-Enter" )
+		searchTextEntry._OnKeyCodeTyped = searchTextEntry.OnKeyCodeTyped
 		function searchTextEntry:OnKeyCodeTyped ( key )
 			searchBox:OnKeyCodePressed( key )
+			self:_OnKeyCodeTyped( key )
 		end
 
 		searchTextEntry._OnGetFocus = searchTextEntry.OnGetFocus
@@ -1245,7 +1247,7 @@ if CLIENT then
 		end
 
 		function searchTextEntry:OnEnter ()
-			find( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) )
+			find( input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT ) )
 			self:RequestFocus()
 		end
 
