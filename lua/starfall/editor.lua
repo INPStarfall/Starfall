@@ -123,8 +123,6 @@ if CLIENT then
 	CreateClientConVar( "sf_editor_indentguides", 1, true, false )
 	CreateClientConVar( "sf_editor_activeline", 1, true, false )
 	CreateClientConVar( "sf_editor_autocompletion", 1, true, false )
-	CreateClientConVar( "sf_editor_fixkeys", system.IsLinux() and 1 or 0, true, false ) --maybe osx too? need someone to check
-	CreateClientConVar( "sf_editor_fixconsolebug", 0, true, false )
 	CreateClientConVar( "sf_editor_disablequitkeybind", 0, true, false )
 	CreateClientConVar( "sf_editor_disablelinefolding", 0, true, false )
 	CreateClientConVar( "sf_editor_fontsize", 13, true, false )
@@ -150,6 +148,7 @@ if CLIENT then
 		SF.Editor.fileViewer = SF.Editor.createFileViewer()
 		SF.Editor.settingsWindow = SF.Editor.createSettingsWindow()
 		SF.Editor.modelViewer = SF.Editor.createModelViewer()
+		SF.Editor.searchBox = SF.Editor.createSearchBox()
 
 		SF.Editor.runJS = function ( ... ) 
 			SF.Editor.editor.components.htmlPanel:QueueJavascript( ... )
@@ -398,15 +397,6 @@ if CLIENT then
 		editor:SetTitle( "Starfall Code Editor" )
 		editor:Center()
 
-		function editor:OnKeyCodePressed ( keyCode )
-			if keyCode == KEY_S and ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) then
-				SF.Editor.saveTab( SF.Editor.getActiveTab() )
-			elseif keyCode == KEY_Q and ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) 
-				and GetConVarNumber( "sf_editor_disablequitkeybind" ) == 0 then
-				SF.Editor.close()
-			end
-		end
-
 		local buttonHolder = editor.components[ "buttonHolder" ]
 
 		buttonHolder:getButton( "Close" ).DoClick = function ( self )
@@ -495,15 +485,110 @@ if CLIENT then
 		end
 		buttonHolder:addButton( "CloseTab", buttonCloseTab )
 
+		local textPanel = vgui.Create( "DTextEntry", editor )
+		textPanel:SetKeyboardInputEnabled( true )
+		textPanel:SetSize( 0, 0 )
+		textPanel:SetMultiline( true )
+		textPanel.m_bDisableTabbing = true
+
 		local html = vgui.Create( "DHTML", editor )
 		html:Dock( FILL )
 		html:DockMargin( 5, 59, 5, 5 )
-		html:SetKeyboardInputEnabled( true )
+		html:SetKeyboardInputEnabled( false )
 		html:SetMouseInputEnabled( true )
 		htmlEditorCode = htmlEditorCode:Replace( "<script>//replace//</script>", table.concat( aceFiles ) )
 		html:SetHTML( htmlEditorCode )
 
 		html:SetAllowLua( true )
+
+		function html:OnFocusChanged ( gained )
+			textPanel:RequestFocus()
+			self:Call( "editor.renderer.showCursor( true )" )
+		end
+
+		-- Reference: ace/lib/keys.js
+		local mods = {}
+		mods.control = 1
+		mods.alt = 2
+		mods.shift = 4
+		local keys = {}
+		for i = KEY_0, KEY_9 do
+			keys[ i ] = input.GetKeyName( i )
+		end
+		for i = KEY_A, KEY_Z do
+			keys[ i ] = input.GetKeyName( i )
+		end
+		for i = KEY_LBRACKET, KEY_EQUAL do
+			keys[ i ] = input.GetKeyName( i )
+		end
+
+		keys[ KEY_SEMICOLON ]	= ";"
+		keys[ KEY_ENTER ]		= "enter"
+		keys[ KEY_SPACE ]		= "space"
+		keys[ KEY_BACKSPACE ]	= "backspace"
+		keys[ KEY_TAB ]			= "tab"
+		keys[ KEY_ESCAPE ]		= "esc"
+		keys[ KEY_INSERT ]		= "insert"
+		keys[ KEY_DELETE ]		= "delete"
+		keys[ KEY_HOME ]		= "home"
+		keys[ KEY_END ]			= "end"
+		keys[ KEY_PAGEUP ]		= "pageup"
+		keys[ KEY_PAGEDOWN ]	= "pagedown"
+		keys[ KEY_UP ]			= "up"
+		keys[ KEY_DOWN ]		= "down"
+		keys[ KEY_LEFT ]		= "left"
+		keys[ KEY_RIGHT ]		= "right"
+
+		function textPanel:OnKeyCodeTyped ( key, notfirst )
+			local shift = input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT )
+			local control = input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL )
+			local alt = input.IsKeyDown( KEY_LALT ) or input.IsKeyDown( KEY_RALT ) 
+
+			local mod = 0
+
+			-- Lua keybinds
+			if control and shift then
+				mod = mods.control + mods.shift
+			elseif shift and alt then
+				mod = mods.shift + mods.alt
+			elseif shift then
+				mod = mods.shift
+			elseif alt then
+				mod = mods.alt
+			elseif control then
+				mod = mods.control
+				if key == KEY_C then
+					html:Call( [[ console.log( "RUNLUA:SetClipboardText( '" + addslashes(editor.getSelectedText()) + "' )" ) ]] )
+				elseif key == KEY_SPACE then
+					SF.Editor.doValidation( true )
+				elseif key == KEY_S then
+					SF.Editor.saveTab( SF.Editor.getActiveTab() )
+				elseif key == KEY_Q and GetConVarNumber( "sf_editor_disablequitkeybind" ) == 0 then
+					SF.Editor.close()
+				elseif key == KEY_F then
+					SF.Editor.searchBox:open()
+					SF.Editor.searchBox.replacePanel:SetVisible( false )
+					SF.Editor.searchBox.panel:InvalidateChildren()
+					SF.Editor.searchBox:InvalidateLayout()
+				elseif key == KEY_H then
+					SF.Editor.searchBox:open()
+					SF.Editor.searchBox.replacePanel:SetVisible( true )
+					SF.Editor.searchBox.panel:InvalidateChildren()
+					SF.Editor.searchBox:InvalidateLayout()
+				end
+			else
+				-- No mod
+			end
+			html:Call( "editor.keyBinding.onCommandKey( {}, " .. mod .. ", keyCodes['" .. ( keys[ key ] or "" ):JavascriptSafe() .. "'] )" )
+		end
+		function textPanel:OnTextChanged ()
+			if not ( ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) and input.IsKeyDown( KEY_SPACE ) ) and 
+				not ( input.IsKeyDown( KEY_LALT ) and not ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) ) and
+				self:GetText():len() > 0 then
+				html:Call( "editor.keyBinding.onTextInput( '" .. self:GetText():JavascriptSafe() .. "' )" )
+			end
+			self:SetText( "" )
+		end
 
 		html:QueueJavascript( "codeMap = JSON.parse(\"" .. util.TableToJSON( SF.Editor.codeMap ):JavascriptSafe() .. "\")" )
 
@@ -518,122 +603,10 @@ if CLIENT then
 
 		html:QueueJavascript( "createStarfallMode(\"" .. table.concat( libs, "|" ) .. "\", \"" .. table.concat( table.Add( table.Copy( functions ), libs ), "|" ) .. "\")" )
 
-		function html:OnKeyCodePressed ( key, notfirst )
-
-			local function repeatKey ()
-				timer.Create( "repeatKey"..key, not notfirst and 0.5 or 0.02, 1, function () self:OnKeyCodePressed( key, true ) end )
-			end
-
-			if GetConVarNumber( "sf_editor_fixkeys" ) == 0 then return end
-			if ( input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT ) ) and 
-				( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) then
-				if key == KEY_UP and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.modifyNumber(1)" )
-					repeatKey()
-				elseif key == KEY_DOWN and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.modifyNumber(-1)" )
-					repeatKey()
-				elseif key == KEY_LEFT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectWordLeft()" )
-					repeatKey()
-				elseif key == KEY_RIGHT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectWordRight()" )
-					repeatKey()
-				end
-			elseif input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT ) then
-				if key == KEY_LEFT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectLeft()" )
-					repeatKey()
-				elseif key == KEY_RIGHT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectRight()" )
-					repeatKey()
-				elseif key == KEY_UP and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectUp()" )
-					repeatKey()
-				elseif key == KEY_DOWN and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectDown()" )
-					repeatKey()
-				elseif key == KEY_HOME and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectLineStart()" )
-					repeatKey()
-				elseif key == KEY_END and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.selection.selectLineEnd()" )
-					repeatKey()
-				end
-			elseif input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) then
-				if key == KEY_LEFT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateWordLeft()" )
-					repeatKey()
-				elseif key == KEY_RIGHT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateWordRight()" )
-					repeatKey()
-				elseif key == KEY_BACKSPACE and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.removeWordLeft()" )
-					repeatKey()
-				elseif key == KEY_DELETE and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.removeWordRight()" )
-					repeatKey()
-				elseif key == KEY_SPACE and input.IsKeyDown( key ) then
-					SF.Editor.doValidation( true )
-				elseif key == KEY_C and input.IsKeyDown( key ) then
-					self:QueueJavascript( "console.log(\"RUNLUA:SetClipboardText(\\\"\"+ addslashes(editor.getSelectedText()) +\"\\\")\")" )
-				end
-			elseif input.IsKeyDown( KEY_LALT ) or input.IsKeyDown( KEY_RALT ) then
-				if key == KEY_UP and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.moveLinesUp()" )
-					repeatKey()
-				elseif key == KEY_DOWN and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.moveLinesDown()" )
-					repeatKey()
-				end
-			else
-				if key == KEY_LEFT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateLeft(1)" )
-					repeatKey()
-				elseif key == KEY_RIGHT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateRight(1)" )
-					repeatKey()
-				elseif key == KEY_UP and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateUp(1)" )
-					repeatKey()
-				elseif key == KEY_DOWN and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateDown(1)" )
-					repeatKey()
-				elseif key == KEY_HOME and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateLineStart()" )
-					repeatKey()
-				elseif key == KEY_END and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateLineEnd()" )
-					repeatKey()
-				elseif key == KEY_PAGEUP and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateFileStart()" )
-					repeatKey()
-				elseif key == KEY_PAGEDOWN and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.navigateFileEnd()" )
-					repeatKey()
-				elseif key == KEY_BACKSPACE and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.remove('left')" )
-					repeatKey()
-				elseif key == KEY_DELETE and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.remove('right')" )
-					repeatKey()
-				elseif key == KEY_ENTER and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.splitLine(); editor.navigateDown(1); editor.navigateLineStart()" )
-					repeatKey()
-				elseif key == KEY_INSERT and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.toggleOverwrite()" )
-					repeatKey()
-				elseif key == KEY_TAB and input.IsKeyDown( key ) then
-					self:QueueJavascript( "editor.indent()" )
-					repeatKey()
-				end
-			end
-		end
 		editor:AddComponent( "htmlPanel", html )
 
 		function editor:OnOpen ()
-			html:Call( "editor.focus()" )
-			html:RequestFocus()
+			textPanel:RequestFocus()
 		end
 
 		local tabHolder = vgui.Create( "StarfallTabHolder", editor )
@@ -780,7 +753,7 @@ if CLIENT then
 		local function setDoClick ( panel )
 			function panel:OnChange ()
 				SF.Editor.saveSettings()
-				timer.Simple( 0.1, function () SF.Editor.updateSettings() end )
+				timer.Simple( 0.01, function () SF.Editor.updateSettings() end )
 			end
 
 			return panel
@@ -788,7 +761,7 @@ if CLIENT then
 		local function setWang( wang, label )
 			function wang:OnValueChanged()
 				SF.Editor.saveSettings()
-				timer.Simple( 0.1, function () SF.Editor.updateSettings() end )
+				timer.Simple( 0.01, function () SF.Editor.updateSettings() end )
 			end
 			wang:GetParent():DockPadding( 10, 1, 10, 1 )
 			wang:Dock( RIGHT )
@@ -805,8 +778,6 @@ if CLIENT then
 		setDoClick( form:CheckBox( "Show indenting guides", "sf_editor_indentguides" ) )
 		setDoClick( form:CheckBox( "Highlight active line", "sf_editor_activeline" ) )
 		setDoClick( form:CheckBox( "Auto completion", "sf_editor_autocompletion" ) )
-		setDoClick( form:CheckBox( "Fix keys not working on Linux", "sf_editor_fixkeys" ) ):SetTooltip( "Some keys don't work with the editor on Linux\nEg. Enter, Tab, Backspace, Arrow keys etc..." )
-		setDoClick( form:CheckBox( "Fix console bug", "sf_editor_fixconsolebug" ) ):SetTooltip( "Fix console opening when pressing ' or @ (UK Keyboad layout)" )
 		setDoClick( form:CheckBox( "Disable quit keybind", "sf_editor_disablequitkeybind" ) ):SetTooltip( "Ctrl-Q" )
 		setDoClick( form:CheckBox( "Disable line folding keybinds", "sf_editor_disablelinefolding" ) )
 
@@ -1196,6 +1167,180 @@ if CLIENT then
 		end )
 
 		return frame
+	end
+
+	function SF.Editor.createSearchBox ()
+		local searchBox = vgui.Create( "StarfallFrame" )
+		searchBox:SetTitle( "Search" )
+		searchBox:Center()
+		searchBox:SetSizable( false )
+		searchBox:SetSize( 275, 150 )
+		searchBox:SetKeyboardInputEnabled( true )
+		searchBox.options = {}
+
+		function searchBox:OnKeyCodePressed ( key )
+			if ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) and ( key == KEY_F or key == KEY_H ) then
+				searchBox.replacePanel:ToggleVisible()
+				searchBox.panel:InvalidateChildren()
+				self:InvalidateLayout()
+			end
+		end
+
+		function searchBox:PerformLayout ( ... )
+			searchBox.optionsPanel:SizeToChildren( true, true )
+			searchBox.panel:SizeToChildren( false, true )
+			searchBox:SizeToChildren( false, true )
+			self:_PerformLayout( ... )
+		end
+
+		searchBox.panel = vgui.Create( "StarfallPanel", searchBox )
+		searchBox.panel:Dock( FILL )
+		searchBox.panel:DockMargin( 0, 3, 0, 0 )
+		searchBox.panel:DockPadding( 5, 5, 5, 5 )
+
+		searchBox.searchPanel = vgui.Create( "StarfallPanel", searchBox.panel )
+		searchBox.searchPanel:Dock( TOP )
+		searchBox.searchPanel:SetBackgroundColor( SF.Editor.colors.medlight )
+
+		local searchTextEntry = vgui.Create( "DTextEntry", searchBox.searchPanel )
+		searchTextEntry:Dock( FILL )
+		searchTextEntry:DockMargin( 0, 0, 3, 0 )
+		searchTextEntry:SetValue( "Search for" )
+		searchTextEntry:SetTooltip( "Next: Enter, Previous: Shift-Enter" )
+		searchTextEntry._OnKeyCodeTyped = searchTextEntry.OnKeyCodeTyped
+		function searchTextEntry:OnKeyCodeTyped ( key )
+			searchBox:OnKeyCodePressed( key )
+			self:_OnKeyCodeTyped( key )
+		end
+
+		searchTextEntry._OnGetFocus = searchTextEntry.OnGetFocus
+		function searchTextEntry:OnGetFocus ()
+			if self:GetValue() == "Search for" then
+				self:SetValue( "" )
+			end
+			searchTextEntry:_OnGetFocus()
+		end
+
+		searchTextEntry._OnLoseFocus = searchTextEntry.OnLoseFocus
+		function searchTextEntry:OnLoseFocus ()
+			if self:GetValue() == "" then
+				self:SetText( "Search for" )
+			end
+			searchTextEntry:_OnLoseFocus()
+		end
+
+		function searchBox:OnOpen ()
+			searchTextEntry:RequestFocus()
+		end
+
+		local function find ( backwards )
+			SF.Editor.runJS( [[
+				editor.find( "]] .. searchTextEntry:GetValue():JavascriptSafe() .. [[", {
+					skipCurrent: true,
+					backwards: ]] .. tostring( backwards or false ) .. [[,
+					wrap: true,
+					regExp: ]] .. tostring( searchBox.options.regex:GetChecked() or false ) .. [[,
+					caseSensitive: ]] .. tostring( searchBox.options.case:GetChecked()  or false ) .. [[,
+					wholeWord: ]] .. tostring( searchBox.options.whole:GetChecked() or false ) .. [[
+				}, false )
+			]] )
+		end
+
+		function searchTextEntry:OnEnter ()
+			find( input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT ) )
+			self:RequestFocus()
+		end
+
+		local findPrevious = vgui.Create( "StarfallButton", searchBox.searchPanel )
+		findPrevious:SetText( "Previous" )
+		findPrevious:Dock( RIGHT )
+		function findPrevious:DoClick ()
+			find( true )
+		end
+
+		local findNext = vgui.Create( "StarfallButton", searchBox.searchPanel )
+		findNext:SetText( "Next" )
+		findNext:Dock( RIGHT )
+		findNext:DockMargin( 0, 0, 3, 0 )
+		function findNext:DoClick ()
+			find( false )
+		end
+
+		searchBox.replacePanel = vgui.Create( "StarfallPanel", searchBox.panel )
+		searchBox.replacePanel:Dock( TOP )
+		searchBox.replacePanel:DockMargin( 0, 5, 0, 0 )
+		searchBox.replacePanel:SetBackgroundColor( SF.Editor.colors.medlight )
+
+		local replaceTextEntry = vgui.Create( "DTextEntry", searchBox.replacePanel )
+		replaceTextEntry:Dock( FILL )
+		replaceTextEntry:DockMargin( 0, 0, 3, 0 )
+		replaceTextEntry:SetValue( "Replace with" )
+		function replaceTextEntry:OnKeyCodeTyped ( key )
+			searchBox:OnKeyCodePressed( key )
+		end
+
+		replaceTextEntry._OnGetFocus = replaceTextEntry.OnGetFocus
+		function replaceTextEntry:OnGetFocus ()
+			if self:GetValue() == "Replace with" then
+				self:SetValue( "" )
+			end
+			replaceTextEntry:_OnGetFocus()
+		end
+
+		replaceTextEntry._OnLoseFocus = replaceTextEntry.OnLoseFocus
+		function replaceTextEntry:OnLoseFocus ()
+			if self:GetValue() == "" then
+				self:SetText( "Replace with" )
+			end
+			replaceTextEntry:_OnLoseFocus()
+		end
+
+		local function replace ( all )
+			SF.Editor.runJS( [[
+				editor.replace]] .. ( all and "All" or "" ) .. [[( "]] .. replaceTextEntry:GetValue():JavascriptSafe() .. [[", {
+					needle: "]] .. searchTextEntry:GetValue():JavascriptSafe() .. [[",
+					wrap: true,
+					regExp: ]] .. tostring( searchBox.options.regex:GetChecked() or false ) .. [[,
+					caseSensitive: ]] .. tostring( searchBox.options.case:GetChecked()  or false ) .. [[,
+					wholeWord: ]] .. tostring( searchBox.options.whole:GetChecked() or false ) .. [[
+				}, false )
+			]] )
+		end
+
+		local replaceAll = vgui.Create( "StarfallButton", searchBox.replacePanel )
+		replaceAll:SetText( "All" )
+		replaceAll:Dock( RIGHT )
+		function replaceAll:DoClick ()
+			replace( true )
+		end
+
+		local replaceNext = vgui.Create( "StarfallButton", searchBox.replacePanel )
+		replaceNext:SetText( "Replace" )
+		replaceNext:Dock( RIGHT )
+		replaceNext:DockMargin( 0, 0, 3, 0 )
+		function replaceNext:DoClick ()
+			replace( false )
+			find( false )
+		end
+
+		searchBox.optionsPanel = vgui.Create( "StarfallPanel", searchBox.panel )
+		searchBox.optionsPanel:Dock( TOP )
+		searchBox.optionsPanel:DockMargin( 0, 5, 0, 0 )
+		searchBox.optionsPanel:SetBackgroundColor( SF.Editor.colors.medlight )
+
+		local form = vgui.Create( "DForm", searchBox.optionsPanel )	
+		form:Dock( FILL )
+		form.Header:SetVisible( false )
+		form.Paint = function () end
+		searchBox.options.regex = form:CheckBox( "Search using regex patterns" )
+		searchBox.options.case = form:CheckBox( "Case sensitive search" )
+		searchBox.options.whole = form:CheckBox( "Match whole words" )
+
+		for k, v in pairs( form.Items ) do
+			v:DockPadding( 5, 5, 0, 0 )
+		end
+
+		return searchBox
 	end
 
 	function SF.Editor.saveSettings ()

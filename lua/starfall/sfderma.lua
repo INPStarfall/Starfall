@@ -22,6 +22,7 @@ function PANEL:Init ()
 	self:SetDeleteOnClose( false )
 	self:MakePopup()
 	self:SetVisible( false )
+	self:SetMinHeight( 315 )
 
 	self.components = {}
 
@@ -29,7 +30,6 @@ function PANEL:Init ()
 	function self:PerformLayout ( ... )
 		local w, h = self:GetSize()
 		if w < 105 + self.components[ "buttonHolder" ]:GetWide() then w = 105 + self.components[ "buttonHolder" ]:GetWide() end
-		if h < 315 then h = 315 end
 		self:SetSize( w, h )
 
 		self:_PerformLayout( ... )
@@ -441,8 +441,11 @@ vgui.Register( "StarfallButton", PANEL, "DButton" )
 
 -- Starfall Panel
 PANEL = {}
+function PANEL:Init ()
+	self.m_bgColor = SF.Editor.colors.light
+end
 PANEL.Paint = function ( panel, w, h )
-	draw.RoundedBox( 0, 0, 0, w, h, SF.Editor.colors.light )
+	draw.RoundedBox( 0, 0, 0, w, h, panel.m_bgColor )
 end
 vgui.Register( "StarfallPanel", PANEL, "DPanel" )
 -- End Starfall Panel
