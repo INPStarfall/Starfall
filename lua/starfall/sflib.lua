@@ -65,7 +65,7 @@ include( "permissions/core.lua" )
 include( "editor.lua" )
 include( "sfhelper.lua" )
 
-SF.cpuBufferN = CreateConVar( "sf_timebuffersize", 16, { FCVAR_REPLICATED }, "Default number of elements for the CPU Quota Buffer." )
+SF.cpuBufferN = CreateConVar( "sf_timebuffersize", 32, { FCVAR_REPLICATED }, "Default number of elements for the CPU Quota Buffer." )
 
 -- We need to make sure that we clear the table if we shrink it, otherwise leftover values will affect the avg.
 cvars.AddChangeCallback( "sf_timebuffersize", function ( n, o, u )
@@ -77,7 +77,7 @@ cvars.AddChangeCallback( "sf_timebuffersize", function ( n, o, u )
 end )
 
 if SERVER then
-	SF.cpuQuota = CreateConVar( "sf_timebuffer", 0.006, {}, "Default CPU Time Quota for serverside." )
+	SF.cpuQuota = CreateConVar( "sf_timebuffer", 0.0012, {}, "Default CPU Time Quota for serverside." )
 else
 	SF.cpuQuota = CreateClientConVar( "sf_timebuffer", 0.015, false, false )
 end
