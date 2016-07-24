@@ -560,6 +560,8 @@ if CLIENT then
 				mod = mods.control
 				if key == KEY_C then
 					html:Call( [[ console.log( "RUNLUA:SetClipboardText( '" + addslashes(editor.getSelectedText()) + "' )" ) ]] )
+				elseif key == KEY_X then
+					html:Call( [[ console.log( "RUNLUA:SetClipboardText( '" + addslashes(editor.getSelectedText()) + "' )" ); editor.insert("") ]] )
 				elseif key == KEY_SPACE then
 					SF.Editor.doValidation( true )
 				elseif key == KEY_S then
