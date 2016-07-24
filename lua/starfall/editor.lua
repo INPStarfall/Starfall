@@ -489,6 +489,7 @@ if CLIENT then
 		textPanel:SetKeyboardInputEnabled( true )
 		textPanel:SetSize( 0, 0 )
 		textPanel:SetMultiline( true )
+		textPanel.m_bAllowEnter = false
 		textPanel.m_bDisableTabbing = true
 
 		local html = vgui.Create( "DHTML", editor )
@@ -559,6 +560,8 @@ if CLIENT then
 				mod = mods.control
 				if key == KEY_C then
 					html:Call( [[ console.log( "RUNLUA:SetClipboardText( '" + addslashes(editor.getSelectedText()) + "' )" ) ]] )
+				elseif key == KEY_X then
+					html:Call( [[ console.log( "RUNLUA:SetClipboardText( '" + addslashes(editor.getSelectedText()) + "' )" ); editor.insert("") ]] )
 				elseif key == KEY_SPACE then
 					SF.Editor.doValidation( true )
 				elseif key == KEY_S then
@@ -584,8 +587,8 @@ if CLIENT then
 		function textPanel:OnTextChanged ()
 			if not ( ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) and input.IsKeyDown( KEY_SPACE ) ) and 
 				not ( input.IsKeyDown( KEY_LALT ) and not ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) ) and
-				self:GetText():len() > 0 then
-				html:Call( "editor.keyBinding.onTextInput( '" .. self:GetText():JavascriptSafe() .. "' )" )
+				self:GetText() ~= "" and self:GetText() ~= " " and self:GetText() ~= "\n" then
+				html:Call( "editor.keyBinding.onTextInput( '" .. self:GetValue():JavascriptSafe() .. "' )" )
 			end
 			self:SetText( "" )
 		end
