@@ -64,6 +64,22 @@
 				}
 			});
 
+			editor.commands.addCommand({
+				name: "space",
+				bindKey: {win: "Space", mac: "Space"},
+				exec: function(editor){
+					editor.insert(" ");
+				}
+			});
+
+			editor.commands.addCommand({
+				name: "enter",
+				bindKey: {win: "Enter", mac: "Enter"},
+				exec: function(editor){
+					editor.insert("\n")
+				}
+			});
+
 			var editSessions = [];
 			var keyCodes = ace.require('ace/lib/keys')
 			codeMap = null;
