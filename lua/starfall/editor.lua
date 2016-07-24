@@ -588,7 +588,7 @@ if CLIENT then
 			if not ( ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) and input.IsKeyDown( KEY_SPACE ) ) and 
 				not ( input.IsKeyDown( KEY_LALT ) and not ( input.IsKeyDown( KEY_LCONTROL ) or input.IsKeyDown( KEY_RCONTROL ) ) ) and
 				self:GetText() ~= "" and self:GetText() ~= " " and self:GetText() ~= "\n" then
-				html:Call( "editor.keyBinding.onTextInput( '" .. self:GetText():JavascriptSafe() .. "' )" )
+				html:Call( "editor.keyBinding.onTextInput( '" .. self:GetValue():JavascriptSafe() .. "' )" )
 			end
 			self:SetText( "" )
 		end
