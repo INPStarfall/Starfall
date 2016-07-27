@@ -286,19 +286,26 @@ function SF.DefaultEnvironment.printTable ( tbl )
 	printTableX( ( SERVER and SF.instance.player or LocalPlayer() ), tbl, 0, { t = true } )
 end
 
+local function parseInclude ( file )
+	if file:find( "%*%*" ) ~= nil then
+		if file:find( "%*%*.*/" ) ~= nil then
+			SF.throw( file:match( "(%*%*[^/]*[/*^/*]*)$" ) .. " is invalid, did you mean '" .. file:match( "(%*%*.*[/*.*]*)$" ):gsub( "%*%*", "%*" ) .. "'?", 2 )
+		end
+		file = file:gsub( "%*%*", "[^/*/*]" )
+	else
+		file = file:gsub( "%*", "[^/]*" ) .. "$"
+	end
 
---- Runs an included script and caches the result.
--- Works pretty much like standard Lua require()
--- @param file The file to include. Make sure to --@include it
--- @return Return value of the script
-function SF.DefaultEnvironment.require (file)
-	SF.CheckType( file, "string" )
+	return file
+end
+
+local function sfRequire ( file )
 	local loaded = SF.instance.data.reqloaded
 	if not loaded then
 		loaded = {}
 		SF.instance.data.reqloaded = loaded
 	end
-	
+
 	if loaded[ file ] then
 		return loaded[ file ]
 	else
@@ -309,15 +316,83 @@ function SF.DefaultEnvironment.require (file)
 	end
 end
 
---- Runs an included script, but does not cache the result.
--- Pretty much like standard Lua dofile()
+--- Runs an included script and caches the result.
+-- Works pretty much like standard Lua require()
 -- @param file The file to include. Make sure to --@include it
+-- @param loadpriority Table of files that should be loaded before any others in the directory, only used if more than one file is specified.
 -- @return Return value of the script
-function SF.DefaultEnvironment.dofile ( file )
+function SF.DefaultEnvironment.require ( file, loadpriority )
+	SF.CheckType( file, "string" )
+	if loadpriority ~= nil then SF.CheckType( loadpriority, "table" ) end
+
+	file = parseInclude( file )
+
+	local parsedLoadPriority = {}
+
+	for _, fileName in pairs( loadpriority or {} ) do
+		parsedLoadPriority.insert( parseInclude( fileName ) )
+	end
+
+	local returns = {}
+
+	for _, pattern in pairs( parsedLoadPriority or {} ) do
+		for fileName, _ in pairs( SF.instance.scripts ) do
+			if fileName:find( pattern ) ~= nil and not returns[ fileName ] then
+				returns[ fileName ] = sfRequire( fileName )
+			end
+		end
+	end
+
+	for fileName, _ in pairs( SF.instance.scripts ) do
+		if fileName:find( file ) ~= nil and not returns[ fileName ] then
+			returns[ fileName ] = sfRequire( fileName )
+		end
+	end
+
+	return returns
+end
+
+local function sfDofile ( file )
 	SF.CheckType( file, "string" )
 	local func = SF.instance.scripts[ file ]
 	if not func then SF.throw( "Can't find file '" .. file .. "' ( Did you forget to --@include it? )", 2 ) end
 	return func()
+end
+
+--- Runs an included script, but does not cache the result.
+-- Pretty much like standard Lua dofile()
+-- @param file The file(s) to include. Make sure to --@include it
+-- @param loadpriority Table of files that should be loaded before any others in the directory, only used if more than one file is specified.
+-- @return Return value of the script
+function SF.DefaultEnvironment.dofile ( file, loadpriority )
+	SF.CheckType( file, "string" )
+	if loadpriority ~= nil then SF.CheckType( loadpriority, "table" ) end
+
+	file = parseInclude( file )
+
+	local parsedLoadPriority = {}
+
+	for _, fileName in pairs( loadpriority or {} ) do
+		parsedLoadPriority.insert( parseInclude( fileName ) )
+	end
+
+	local returns = {}
+
+	for _, pattern in pairs( parsedLoadPriority or {} ) do
+		for fileName, _ in pairs( SF.instance.scripts ) do
+			if fileName:find( pattern ) ~= nil and not returns[ fileName ] then
+				returns[ fileName ] = sfDofile( fileName )
+			end
+		end
+	end
+
+	for fileName, _ in pairs( SF.instance.scripts ) do
+		if fileName:find( file ) ~= nil and not returns[ fileName ] then
+			returns[ fileName ] = sfDofile( fileName )
+		end
+	end
+
+	return returns
 end
 
 --- GLua's loadstring
