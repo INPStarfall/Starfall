@@ -86,7 +86,7 @@ function SF.Instance:runWithOps ( func, ... )
 
 		if testStatistic > criticalValue or average > 1.4 * SF.cpuQuota:GetFloat() then
 			debug.sethook( nil )
-			SF.throw( "CPU Quota Exceeded!", 0, true )
+			SF.throw( "CPU Quota Exceeded!", 2, true )
 		end
 
 		oldSysTime = SysTime()
