@@ -25,11 +25,11 @@ function ENT:onRestore ()
 end
 
 function ENT:BuildDupeInfo ()
-	return {}
+	return WireLib.BuildDupeInfo( self ) or {}
 end
 
-function ENT:ApplyDupeInfo ()
-	return {}
+function ENT:ApplyDupeInfo ( ply, ent, info, GetEntByID )
+	WireLib.ApplyDupeInfo ( ply, ent, info, GetEntByID )
 end
 
 function ENT:PreEntityCopy ()
@@ -39,8 +39,15 @@ function ENT:PreEntityCopy ()
 	end
 end
 
-function ENT:PostEntityPaste ( ply, ent )
+local function EntLookup(created)
+	return function(id, def)
+		local ent = created[id]
+		return (IsValid(ent) and ent or def)
+	end
+end
+
+function ENT:PostEntityPaste ( ply, ent, created )
 	if ent.EntityMods and ent.EntityMods.SFDupeInfo then
-		ent:ApplyDupeInfo( ply, ent, ent.EntityMods.SFDupeInfo )
+		ent:ApplyDupeInfo( ply, ent, ent.EntityMods.SFDupeInfo, EntLookup(created) )
 	end
 end

@@ -180,9 +180,9 @@ function ENT:BuildDupeInfo ()
 end
 
 function ENT:ApplyDupeInfo ( ply, ent, info, GetEntByID  )
-	self.BaseClass.ApplyDupeInfo( self, ply, ent, info, GetEntByID )
 	self.owner = ply
 
 	local code, main = SF.DeserializeCode( info.starfall )
 	self:CodeSent( ply, code, main )
+	self.BaseClass.ApplyDupeInfo( self, ply, ent, info, GetEntByID )
 end
