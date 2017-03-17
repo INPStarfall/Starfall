@@ -22,8 +22,6 @@ P.privileges = {}
 
 if SERVER then
 	util.AddNetworkString( "starfall_permissions_privileges" )
-else
-	P.serverPrivileges = {}
 end
 
 do
@@ -66,7 +64,7 @@ function P.registerProvider ( provider )
 		error( "given object does not implement the provider interface", 2 )
 	end
 
-	providers[ provider ] = provider
+	providers[ provider ] = true
 
 	if provider:supportsOwner() then
 		have_owner = true
@@ -92,7 +90,7 @@ function P.check ( principal, target, key )
 	end
 
 	local allow = false
-	for _, provider in pairs( providers ) do
+	for provider, _ in pairs( providers ) do
 		local result = provider:check( principal, target, key )
 		if DENY == result then
 			-- a single deny overrides any allows, just deny it now
@@ -111,8 +109,11 @@ end
 -- @param id unique identifier of the privilege being registered
 -- @param name Human readable name of the privilege
 -- @param description a short description of the privilege
-function P.registerPrivilege ( id, name, description )
+-- @param source a string with the value of "cl", "sh", or "sv" to state the locale of the privilege
+function P.registerPrivilege ( id, name, description, source )
 	P.privileges[ id ] = { name = name, description = description }
+
+	hook.Run( "sf_registerPrivilege", id, name, description, source )
 
 	-- The second check is not really necessary, but since it will resolve to false most of the time, we can save some time
 	if SERVER and #player.GetAll() > 0 then
@@ -194,7 +195,7 @@ else
 	net.Receive( "starfall_permissions_privileges", function ()
 		local len = net.ReadInt( 16 )
 		for i = 1, len do
-			P.serverPrivileges[ net.ReadString() ] = { name = net.ReadString(), description = net.ReadString() }
+			P.privileges[ net.ReadString() ] = { name = net.ReadString(), description = net.ReadString() }
 		end
 	end )
 end
