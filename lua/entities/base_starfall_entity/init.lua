@@ -25,11 +25,11 @@ function ENT:onRestore ()
 end
 
 function ENT:BuildDupeInfo ()
-	return {}
+	return WireLib.BuildDupeInfo( self ) or {}
 end
 
-function ENT:ApplyDupeInfo ()
-	return {}
+function ENT:ApplyDupeInfo ( ply, ent, info, GetEntByID )
+	WireLib.ApplyDupeInfo ( ply, ent, info, GetEntByID )
 end
 
 function ENT:PreEntityCopy ()
