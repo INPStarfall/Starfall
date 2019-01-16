@@ -1410,14 +1410,6 @@ if CLIENT then
 		js( "editor.setFontSize(" .. GetConVarNumber( "sf_editor_fontsize" ) .. ")" )
 	end
 
-	-- FIXME: Compute a better hash to avoid collisions, only used for implementation completeness.
-	local function computeCodeHash(code)
-		-- NOTE: This is not the optimal hash but to compensate most collisions
-		--       we reverse the string and concat both results.
-		local reversed = string.reverse(code)
-		return util.CRC(code) .. util.CRC(reversed)
-	end
-	
 	--- (Client) Builds a table for the compiler to use
 	-- @param maincode The source code for the main chunk
 	-- @param codename The name of the main chunk
@@ -1442,19 +1434,20 @@ if CLIENT then
 		local function recursiveLoad ( path )
 			if loaded[ path ] then return end
 			loaded[ path ] = true
-			
+
 			local code
 			if path == codename and maincode then
 				code = maincode
 			else
-				code = file.Read( "starfall/"..path, "DATA" ) or error( "Bad include: " .. path, 0 )
+				code = file.Read( "starfall/" .. path, "DATA" ) or error( "Bad include: " .. path, 0 )
 			end
-			
+
 			tbl.files[ path ] = code
-			tbl.hashes[ path ] = computeCodeHash(code)
-			
+			-- NOTE: There can be collisions but its unlikely and not security critical.
+			tbl.hashes[ path ] = util.CRC(code)
+
 			SF.Preprocessor.ParseDirectives( path, code, {}, ppdata )
-			
+
 			if ppdata.includes and ppdata.includes[ path ] then
 				local inc = ppdata.includes[ path ]
 				if not tbl.includes[ path ] then
@@ -1463,7 +1456,7 @@ if CLIENT then
 				else
 					assert( tbl.includes[ path ] == inc )
 				end
-				
+
 				for i = 1, #inc do
 					recursiveLoad( inc[i] )
 				end
