@@ -1410,6 +1410,14 @@ if CLIENT then
 		js( "editor.setFontSize(" .. GetConVarNumber( "sf_editor_fontsize" ) .. ")" )
 	end
 
+	-- FIXME: Compute a better hash to avoid collisions, only used for implementation completeness.
+	local function computeCodeHash(code)
+		-- NOTE: This is not the optimal hash but to compensate most collisions
+		--       we reverse the string and concat both results.
+		local reversed = string.reverse(code)
+		return util.CRC(code) .. util.CRC(reversed)
+	end
+	
 	--- (Client) Builds a table for the compiler to use
 	-- @param maincode The source code for the main chunk
 	-- @param codename The name of the main chunk
@@ -1424,6 +1432,7 @@ if CLIENT then
 		codename = codename or SF.Editor.getOpenFile() or "main"
 		tbl.mainfile = codename
 		tbl.files = {}
+		tbl.hashes = {}
 		tbl.filecount = 0
 		tbl.includes = {}
 
@@ -1442,6 +1451,8 @@ if CLIENT then
 			end
 			
 			tbl.files[ path ] = code
+			tbl.hashes[ path ] = computeCodeHash(code)
+			
 			SF.Preprocessor.ParseDirectives( path, code, {}, ppdata )
 			
 			if ppdata.includes and ppdata.includes[ path ] then
