@@ -78,6 +78,7 @@ end )
 
 if SERVER then
 	SF.cpuQuota = CreateConVar( "sf_timebuffer", 0.0012, {}, "Default CPU Time Quota for serverside." )
+	SF.cacheExpiryTime = CreateConVar( "sf_cache_expiry_time", 10, {}, "Time in minutes when the uploaded code cache expires." )
 else
 	SF.cpuQuota = CreateClientConVar( "sf_timebuffer", 0.015, false, false )
 end
@@ -478,11 +479,15 @@ end
 
 if SERVER then
 	util.AddNetworkString( "starfall_requpload" )
+	util.AddNetworkString( "starfall_uploadlist")
+	util.AddNetworkString( "starfall_requestfiles")
 	util.AddNetworkString( "starfall_upload" )
 	util.AddNetworkString( "starfall_addnotify" )
 	util.AddNetworkString( "starfall_console_print" )
 	
 	local uploaddata = {}
+	local codecache = {}
+
 	-- Packet structure:
 	-- 
 	-- Initialize packet:
@@ -502,11 +507,12 @@ if SERVER then
 	-- @return True if the code was requested, false if an incomplete request is still in progress for that player
 	function SF.RequestCode ( ply, callback )
 		if uploaddata[ply] then return false end
-		
+
 		net.Start( "starfall_requpload" )
 		net.WriteEntity( ent )
 		net.Send( ply )
 
+		codecache[ply] = codecache[ply] or {}
 		uploaddata[ ply ] = {
 			files = {},
 			mainfile = nil,
@@ -518,68 +524,37 @@ if SERVER then
 
 	hook.Add( "PlayerDisconnected", "SF_requestcode_cleanup", function ( ply )
 		uploaddata[ ply ] = nil
+		codecache[ply] = nil
 	end )
-	
-	net.Receive( "starfall_upload", function ( len, ply )
-		local updata = uploaddata[ ply ]
-		if not updata then
-			ErrorNoHalt( "SF: Player " .. ply:GetName() .. " tried to upload code without being requested (expect this message multiple times)\n" )
-			return
+
+	function SF.AddNotify ( ply, msg, notifyType, duration, sound )
+
+		-- If the first arg is a string, it can't be a player, so shift all values.
+		if type( ply ) == "string" then
+			ply, msg, notifyType, duration, sound = nil, ply, msg, notifyType, duration
 		end
-		
-		if updata.needHeader then
-			if net.ReadBit() == 0 then
-				--print( "Recieved cancel packet" )
-				updata.callback( nil, nil )
-				uploaddata[ ply ] = nil
-				return
-			end
-			updata.mainfile = net.ReadString()
-			updata.needHeader = nil
-			--print( "Begin recieving, mainfile:", updata.mainfile )
+
+		if ply and not IsValid( ply ) then return end
+
+		net.Start( "starfall_addnotify" )
+		net.WriteString( msg )
+		net.WriteUInt( notifyType, 8 or 0, 8 )
+		net.WriteFloat( duration )
+		net.WriteUInt( sound, 8 or 0, 8 )
+		if ply then
+			net.Send( ply )
 		else
-			if net.ReadBit() ~= 0 then
-				--print( "End recieving data" )
-				updata.callback( updata.mainfile, updata.files )
-				uploaddata[ ply ] = nil
-				return
-			end
-			local filename = net.ReadString()
-			local filedata = net.ReadString()
-			--print( "\tRecieved data for:", filename, "len:", #filedata )
-			updata.files[ filename ] = updata.files[ filename ] and updata.files[ filename ] .. filedata or filedata
+			net.Broadcast()
 		end
+	end
 
-	end )
-
-    function SF.AddNotify ( ply, msg, notifyType, duration, sound )
-
-        -- If the first arg is a string, it can't be a player, so shift all values.
-        if type( ply ) == "string" then
-            ply, msg, notifyType, duration, sound = nil, ply, msg, notifyType, duration
-        end
-
-        if ply and not IsValid( ply ) then return end
-
-        net.Start( "starfall_addnotify" )
-	net.WriteString( msg )
-        net.WriteUInt( notifyType, 8 or 0, 8 )
-        net.WriteFloat( duration )
-        net.WriteUInt( sound, 8 or 0, 8 )
-        if ply then
-            net.Send( ply )
-        else
-            net.Broadcast()
-        end
-    end
-
-    function SF.Print ( ply, msg )
+	function SF.Print ( ply, msg )
 		if type( ply ) == "string" then
 			ply, msg = nil, ply
 		end
 
 		net.Start( "starfall_console_print" )
-			net.WriteString( msg )
+		net.WriteString( msg )
 		if ply then
 			net.Send( ply )
 		else
@@ -701,84 +676,273 @@ if SERVER then
 		return sf
 	end
 
+	local function getCodeCache(ply, filename, hash, codeSize)
+		local cacheEntry = codecache[ply][filename] or {}
+		for k,v in pairs(cacheEntry) do
+			if v.hash == hash and v.size == codeSize then
+				return v
+			end
+		end
+		return nil
+	end
+
+	local function addCodeCache(ply, filename, hash, codeSize)
+		if not IsValid(ply) then
+			return
+		end
+		if codecache[ply][filename] == nil then
+			codecache[ply][filename] = {}
+		end
+		local cacheEntry = codecache[ply][filename]
+		local cache = { filename = filename, hash = hash, size = codeSize, time = CurTime() }
+		table.insert(cacheEntry, cache)
+		return cache
+	end
+
+	local function sweepCodeCache()
+		local expiryTime = math.min(SF.cacheExpiryTime:GetInt() * 60, 60)
+		for ply, cachedFiles in pairs(codecache) do
+			for fname, entries in pairs(cachedFiles) do
+				for k, entry in pairs(entries) do
+					if CurTime() - entry.time >= expiryTime then
+						codecache[ply][fname][k] = nil
+						--print("Removing expired cache entry: " .. fname .. ", hash: " .. entry.hash)
+					end
+				end
+			end
+		end
+	end
+
+	net.Receive( "starfall_upload", function ( len, ply )
+		local updata = uploaddata[ ply ]
+		if not updata then
+			ErrorNoHalt( "SF: Player " .. ply:GetName() .. " tried to upload code without being requested (expect this message multiple times)\n" )
+			return
+		end
+
+		local readType = net.ReadUInt(2)
+		if readType == 0 then
+			-- Start of file.
+			local fname = net.ReadString()
+			local hash = net.ReadString()
+			local codeSize = net.ReadUInt(18)
+			--print("Receiving file: " .. fname .. " (Hash: " .. hash .. ")")
+			updata.files[fname] = ""
+			addCodeCache(ply, fname, hash, codeSize)
+		elseif readType == 1 then
+			-- Chunk
+			local fname = net.ReadString()
+			local data = net.ReadString()
+			updata.files[fname] = updata.files[fname] .. data
+			--print("Received chunk for: " .. fname .. ", size: " .. #data .. " bytes")
+		elseif readType == 2 then
+			-- End of file
+			local fname = net.ReadString()
+			local hash = net.ReadString()
+			local code = updata.files[fname]
+			local cache = getCodeCache(ply, fname, hash, #code)
+			cache.code = code
+		elseif readType == 3 then
+			-- End of list
+			updata.callback( updata.mainfile, updata.files )
+			uploaddata[ ply ] = nil
+		else
+			error("Unexpected read type: " .. tostring(readType))
+		end
+
+		-- Also cleanup cached entries older than 10 minutes, if they
+		-- will be used again the time updates.
+		if readType == 3 then
+			sweepCodeCache()
+		end
+
+	end )
+
+	net.Receive( "starfall_uploadlist", function(len, ply)
+
+		local updata = uploaddata[ ply ]
+		if not updata then
+			ErrorNoHalt( "SF: Player " .. ply:GetName() .. " tried to upload code without being requested (expect this message multiple times)\n" )
+			return
+		end
+
+		local missing = {}
+		local mainfile = net.ReadString()
+		local count = net.ReadUInt(16)
+
+		updata.mainfile = mainfile
+
+		-- Create a list of files we need from the client.
+		for i = 1, count do
+			local fname = net.ReadString()
+			local hash = net.ReadString()
+			local codeSize = net.ReadUInt(18)
+			if cacheMissing == true then
+				-- Entire cache missing, don't bother looking for individual files.
+				table.insert(missing, { filename = fname, hash = hash, codeSize = codeSize })
+				--print("File " .. fname .. " is missing in cache")
+			else
+				local cached = getCodeCache(ply, fname, hash, codeSize)
+				if cached == nil then
+					--print("No cache found for " .. fname)
+					table.insert(missing, { filename = fname, hash = hash, codeSize = codeSize })
+				else
+					--print("Using cache for " .. fname)
+					updata.files[ fname ] = cached.code
+					cached.time = CurTime() -- Keep alive as long its in use.
+				end
+			end
+		end
+
+		if #missing > 0 then
+			-- Request missing files.
+			net.Start("starfall_requestfiles")
+			net.WriteUInt(#missing, 16)
+			for _,v in pairs(missing) do
+				--print("Requesting missing file from client: " .. v.filename)
+				net.WriteString(v.filename)
+				net.WriteString(v.hash)
+				net.WriteUInt(v.codeSize, 18)
+			end
+			net.Send(ply)
+		else
+			-- Everything was cached, we can directly invoke the callback.
+			--print("Cache is up to date for entry: " .. mainfile)
+			updata.callback( updata.mainfile, updata.files )
+			uploaddata[ ply ] = nil
+		end
+
+	end)
+
 else
+
+	-- Send list of data.
+	local currentlist = nil
+
 	net.Receive( "starfall_requpload", function ( len )
 		local ok, list = SF.Editor.BuildIncludesTable()
-		if ok then
-			--print( "Uploading SF code" )
-			net.Start( "starfall_upload" )
-			net.WriteBit( true )
-			net.WriteString( list.mainfile )
-			net.SendToServer()
-			--print( "\tHeader sent" )
-
-			local fname = next( list.files )
-			while fname do
-				--print( "\tSending data for:", fname )
-				local fdata = list.files[ fname ]
-				local offset = 1
-				repeat
-					net.Start( "starfall_upload" )
-						net.WriteBit( false )
-						net.WriteString( fname )
-						local data = fdata:sub( offset, offset + 60000 )
-						net.WriteString( data )
-					net.SendToServer()
-
-					--print( "\t\tSent data from", offset, "to", offset + #data )
-					offset = offset + #data + 1
-				until offset > #fdata
-				fname = next( list.files, fname )
-			end
-
-			net.Start( "starfall_upload" )
-				net.WriteBit( true )
-			net.SendToServer()
-			--print( "Done sending" )
-		else
-			net.Start( "starfall_upload" )
-				net.WriteBit( false )
-			net.SendToServer()
+		if not ok then
 			if list then
 				SF.AddNotify( LocalPlayer(), list, NOTIFY_ERROR, 7, NOTIFYSOUND_ERROR1 )
 			end
+			currentlist = nil
+			return
+		else
+			currentlist = list
 		end
+
+		--print("Server requested code upload, sending file index.")
+
+		local fileCount = table.Count(currentlist.files)
+
+		net.Start( "starfall_uploadlist" )
+		net.WriteString(currentlist.mainfile)
+		net.WriteUInt(fileCount, 16)
+		for fname, code in pairs(currentlist.files) do
+			net.WriteString(fname)
+			net.WriteString(currentlist.hashes[fname])
+			net.WriteUInt(#code, 18)
+		end
+		net.SendToServer()
 	end)
 
-    local sounds = {
-        [ NOTIFYSOUND_DRIP1 ] = "ambient/water/drip1.wav",
-        [ NOTIFYSOUND_DRIP2 ] = "ambient/water/drip2.wav",
-        [ NOTIFYSOUND_DRIP3 ] = "ambient/water/drip3.wav",
-        [ NOTIFYSOUND_DRIP4 ] = "ambient/water/drip4.wav",
-        [ NOTIFYSOUND_DRIP5 ] = "ambient/water/drip5.wav",
-        [ NOTIFYSOUND_ERROR1 ] = "buttons/button10.wav",
-        [ NOTIFYSOUND_CONFIRM1 ] = "buttons/button3.wav",
-        [ NOTIFYSOUND_CONFIRM2 ] = "buttons/button14.wav",
-        [ NOTIFYSOUND_CONFIRM3 ] = "buttons/button15.wav",
-        [ NOTIFYSOUND_CONFIRM4 ] = "buttons/button17.wav"
-    }
+	net.Receive( "starfall_requestfiles", function ( len )
 
-    function SF.AddNotify ( ply, msg, type, duration, sound )
-        if not IsValid( ply ) then return end
+		if currentlist == nil then
+			ErrorNoHalt( "Server requested files before building the index." )
+			return
+		end
 
-        if ply ~= LocalPlayer() then
-            return
-        end
+		--print("Received server request for files.")
 
-        GAMEMODE:AddNotify( msg, type, duration )
+		local requested = {}
 
-        if sound and sounds[ sound ] then
-            surface.PlaySound( sounds[ sound ] )
-        end
-    end
+		local fileCount = net.ReadUInt(16)
+		for i = 1, fileCount do
+			local fname = net.ReadString()
+			local hash = net.ReadString()
+			local codeSize = net.ReadUInt(18)
+			table.insert(requested, { filename = fname, hash = hash, codeSize = codeSize })
+		end
 
-    net.Receive( "starfall_addnotify", function ()
-        SF.AddNotify( LocalPlayer(), net.ReadString(), net.ReadUInt( 8 ), net.ReadFloat(), net.ReadUInt( 8 ) )
-    end )
+		for _,v in pairs(requested) do
+			-- Chunk info
+			--print("Sending file: " .. v.filename .. "(Hash: " .. v.hash .. ", size: " .. v.codeSize .. ")")
 
-    net.Receive( "starfall_console_print", function ()
+			net.Start("starfall_upload")
+			net.WriteUInt(0, 2) -- Start of stream
+			net.WriteString(v.filename)
+			net.WriteString(v.hash)
+			net.WriteUInt(v.codeSize, 18)
+			net.SendToServer()
+
+			-- Send all chunks.
+			local codeData = currentlist.files[v.filename]
+			local offset = 1
+			repeat
+
+				local data = codeData:sub( offset, offset + 50000 )
+
+				--print("Sending chunk (" .. v.filename .. ") offset: " .. tostring(offset) .. ", len: " .. tostring(#data))
+
+				net.Start( "starfall_upload" )
+				net.WriteUInt(1, 2) -- Chunk piece.
+				net.WriteString( v.filename )
+				net.WriteString( data )
+				net.SendToServer()
+
+				offset = offset + #data
+			until offset > #codeData
+
+			net.Start( "starfall_upload" )
+				net.WriteUInt(2, 2) -- End of file
+				net.WriteString( v.filename )
+				net.WriteString( v.hash )
+			net.SendToServer()
+		end
+
+		net.Start( "starfall_upload" )
+			net.WriteUInt(3, 2) -- List complete
+		net.SendToServer()
+
+		currentlist = nil
+
+	end)
+
+	local sounds = {
+		[ NOTIFYSOUND_DRIP1 ] = "ambient/water/drip1.wav",
+		[ NOTIFYSOUND_DRIP2 ] = "ambient/water/drip2.wav",
+		[ NOTIFYSOUND_DRIP3 ] = "ambient/water/drip3.wav",
+		[ NOTIFYSOUND_DRIP4 ] = "ambient/water/drip4.wav",
+		[ NOTIFYSOUND_DRIP5 ] = "ambient/water/drip5.wav",
+		[ NOTIFYSOUND_ERROR1 ] = "buttons/button10.wav",
+		[ NOTIFYSOUND_CONFIRM1 ] = "buttons/button3.wav",
+		[ NOTIFYSOUND_CONFIRM2 ] = "buttons/button14.wav",
+		[ NOTIFYSOUND_CONFIRM3 ] = "buttons/button15.wav",
+		[ NOTIFYSOUND_CONFIRM4 ] = "buttons/button17.wav"
+	}
+
+	function SF.AddNotify ( ply, msg, type, duration, sound )
+		if not IsValid( ply ) then return end
+
+		if ply ~= LocalPlayer() then
+			return
+		end
+
+		GAMEMODE:AddNotify( msg, type, duration )
+
+		if sound and sounds[ sound ] then
+			surface.PlaySound( sounds[ sound ] )
+		end
+	end
+
+	net.Receive( "starfall_addnotify", function ()
+		SF.AddNotify( LocalPlayer(), net.ReadString(), net.ReadUInt( 8 ), net.ReadFloat(), net.ReadUInt( 8 ) )
+	end )
+
+	net.Receive( "starfall_console_print", function ()
 		print( net.ReadString() )
-    end )
+	end )
 end
 
 -- ------------------------------------------------------------------------- --

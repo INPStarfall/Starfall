@@ -1424,6 +1424,7 @@ if CLIENT then
 		codename = codename or SF.Editor.getOpenFile() or "main"
 		tbl.mainfile = codename
 		tbl.files = {}
+		tbl.hashes = {}
 		tbl.filecount = 0
 		tbl.includes = {}
 
@@ -1433,17 +1434,20 @@ if CLIENT then
 		local function recursiveLoad ( path )
 			if loaded[ path ] then return end
 			loaded[ path ] = true
-			
+
 			local code
 			if path == codename and maincode then
 				code = maincode
 			else
-				code = file.Read( "starfall/"..path, "DATA" ) or error( "Bad include: " .. path, 0 )
+				code = file.Read( "starfall/" .. path, "DATA" ) or error( "Bad include: " .. path, 0 )
 			end
-			
+
 			tbl.files[ path ] = code
+			-- NOTE: There can be collisions but its unlikely and not security critical.
+			tbl.hashes[ path ] = util.CRC(code)
+
 			SF.Preprocessor.ParseDirectives( path, code, {}, ppdata )
-			
+
 			if ppdata.includes and ppdata.includes[ path ] then
 				local inc = ppdata.includes[ path ]
 				if not tbl.includes[ path ] then
@@ -1452,7 +1456,7 @@ if CLIENT then
 				else
 					assert( tbl.includes[ path ] == inc )
 				end
-				
+
 				for i = 1, #inc do
 					recursiveLoad( inc[i] )
 				end
